@@ -79,10 +79,11 @@ export async function PUT(
       }
     }
 
-    const validRoles = ['admin', 'manager', 'member', 'master_admin']
-    if (role && !validRoles.includes(role)) {
+    // master_admin role can NEVER be set via the API — only via MASTER_ADMIN_EMAILS
+    const safeRoles = ['admin', 'manager', 'member']
+    if (role && !safeRoles.includes(role)) {
       return NextResponse.json(
-        { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
+        { error: `Invalid role. Must be one of: ${safeRoles.join(', ')}` },
         { status: 400 }
       )
     }

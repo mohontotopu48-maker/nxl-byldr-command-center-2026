@@ -237,7 +237,7 @@ export function DashboardView() {
       <motion.div variants={itemVariants}>
         <Card className="overflow-hidden border-border bg-card">
           <div className="relative h-36 md:h-44">
-            <img src="https://i.ibb.co.com/qYGkWhTC/vsualdm-left-top-icon-bk-nw-ht.jpg" alt="Welcome Banner" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+            <img src="/dashboard-banner.png" alt="Welcome Banner" className="absolute inset-0 h-full w-full object-cover opacity-40" />
             <div className="absolute inset-0 bg-gradient-to-r from-card via-card/80 to-transparent" />
             <div className="absolute inset-0 flex items-center px-6 md:px-8">
               <div>

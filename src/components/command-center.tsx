@@ -13,6 +13,7 @@ import { SettingsView } from '@/components/views/settings-view'
 import { MastersPlanZone } from '@/components/views/masters-plan-zone'
 import { AiChat } from '@/components/ai-chat'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 const viewComponents: Record<NavView, React.ComponentType> = {
   dashboard: DashboardView,
@@ -34,8 +35,6 @@ interface CommandCenterProps {
   onLogout?: () => void
 }
 
-const MASTER_ADMINS = ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com']
-
 export function CommandCenter({ onLogout }: CommandCenterProps) {
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -51,7 +50,7 @@ export function CommandCenter({ onLogout }: CommandCenterProps) {
   const storedAuth = getStoredAuth()
   const [userRole, setUserRole] = useState<string | null>(storedAuth?.role || null)
 
-  const isAdmin = userRole === 'master_admin' || MASTER_ADMINS.includes(storedAuth?.email || '')
+  const isAdmin = userRole === 'master_admin' || MASTER_ADMIN_EMAILS.includes(storedAuth?.email?.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number])
 
   const ActiveComponent = viewComponents[activeView]
 

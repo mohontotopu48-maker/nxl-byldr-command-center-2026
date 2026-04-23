@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   Globe,
   Zap,
-  ChevronRight,
   Info,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -30,6 +29,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 interface LandingPageProps {
   onLogin: (userData?: { name: string; email: string; role: string }) => void
@@ -45,7 +45,6 @@ const scaleIn = {
   show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: cubicEase } },
 }
 
-const MASTER_ADMINS = ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com']
 type ForgotStep = 'email' | 'otp' | 'newPassword' | 'success'
 
 export function LandingPage({ onLogin }: LandingPageProps) {
@@ -91,7 +90,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       })
       if (res.ok) {
         const data = await res.json().catch(() => null)
-        const role = MASTER_ADMINS.includes(email.toLowerCase()) ? 'master_admin' : (data?.user?.role || 'member')
+        const role = MASTER_ADMIN_EMAILS.includes(email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : (data?.user?.role || 'member')
         const authData = { name: data?.user?.name || email.split('@')[0], email, role, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
         toast.success('Welcome to VSUAL Business OS!')
@@ -124,7 +123,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       })
       if (res.ok) {
         const data = await res.json()
-        const role = MASTER_ADMINS.includes(oauthEmail.toLowerCase()) ? 'master_admin' : 'member'
+        const role = MASTER_ADMIN_EMAILS.includes(oauthEmail.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : 'member'
         const authData = { name: data.name || oauthEmail.split('@')[0], email: data.email || oauthEmail, role, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
         toast.success('Welcome to VSUAL Business OS!')
@@ -173,8 +172,13 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: '#0B0B0F' }}>
 
+      {/* Full Background Image */}
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(/landing-bg.png)' }} />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0B0B0F]/60 via-[#0B0B0F]/70 to-[#0B0B0F]/90" />
+
       {/* Background layers */}
-      <div className="animate-mesh absolute inset-0 opacity-60"
+      <div className="animate-mesh absolute inset-0 opacity-40"
         style={{ background: 'linear-gradient(125deg, #0B0B0F 0%, #0a1628 25%, #0B0B0F 50%, #0d1a12 75%, #0B0B0F 100%)' }} />
       <div className="absolute inset-0 animate-grid-pulse"
         style={{
@@ -483,8 +487,8 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       <Dialog open={oauthDialogOpen} onOpenChange={setOauthDialogOpen}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Continue with {providerLabel}</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Enter your email to sign in or create a new account</DialogDescription>
+            <DialogTitle className="text-foreground">Sign in with {providerLabel}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Enter your email to get started instantly</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
@@ -499,7 +503,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setOauthDialogOpen(false)} className="flex-1 border-border">Cancel</Button>
               <Button onClick={handleOAuthSubmit} disabled={oauthLoading} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                {oauthLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : <>Continue<ChevronRight className="ml-1 h-4 w-4" /></>}
+                {oauthLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : <>Sign In<ArrowRight className="ml-1 h-4 w-4" /></>}
               </Button>
             </div>
           </div>
