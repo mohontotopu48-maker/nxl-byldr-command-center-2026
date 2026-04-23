@@ -453,9 +453,6 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
           onRefresh={refreshJourneys}
         />
       )}
-
-      {/* ═══ HOW TO USE DIALOG ═══ */}
-      <HowToUseDialog />
     </motion.div>
   )
 }
