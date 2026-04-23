@@ -75,7 +75,7 @@ skills/
 # examples
 examples/
 
-# cloudflare
-.wrangler/
-.worker-next/
-.open-next/
+# cloudflare (removed)
+# .wrangler/
+# .worker-next/
+# .open-next/

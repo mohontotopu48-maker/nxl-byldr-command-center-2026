@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Required for Cloudflare Pages
-  serverExternalPackages: ["@prisma/client", "better-sqlite3"],
+  // Prisma client must be externalized for serverless environments (Vercel)
+  serverExternalPackages: ["@prisma/client"],
   async headers() {
     return [
       {

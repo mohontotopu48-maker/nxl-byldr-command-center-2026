@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,16 +22,16 @@ model Project {
 }
 
 model Task {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
   description String?
-  status      String   @default("todo")
-  priority    String   @default("medium")
+  status      String     @default("todo")
+  priority    String     @default("medium")
   projectId   String
   assigneeId  String?
   dueDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee    TeamMember? @relation(fields: [assigneeId], references: [id])
 }
@@ -94,15 +94,15 @@ model OtpCode {
 }
 
 model SetupStep {
-  id          String   @id @default(cuid())
-  stepNumber  Int      @unique
+  id          String    @id @default(cuid())
+  stepNumber  Int       @unique
   title       String
   description String?
-  phase       String   @default("handover")
-  status      String   @default("pending")
+  phase       String    @default("handover")
+  status      String    @default("pending")
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model AlertBar {
