@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, company, phone, plan, status } = body
+    const { name, email, company, phone, plan, status, password } = body
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         email: email.trim().toLowerCase(),
+        password: password || 'vsual2025',
         company: company ?? null,
         phone: phone ?? null,
         plan: (validPlans.includes(plan) ? plan : 'free'),

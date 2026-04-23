@@ -14,8 +14,9 @@ import {
   ShieldCheck,
   Globe,
   Zap,
-  Info,
   UserCheck,
+  Building2,
+  Phone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,21 +48,25 @@ const scaleIn = {
 }
 
 type ForgotStep = 'email' | 'otp' | 'newPassword' | 'success'
+type AuthMode = 'admin' | 'customer'
+type AuthAction = 'login' | 'register'
 
 export function LandingPage({ onLogin }: LandingPageProps) {
+  const [authMode, setAuthMode] = useState<AuthMode>('admin')
+  const [authAction, setAuthAction] = useState<AuthAction>('login')
+
+  // Common fields
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [loginMode, setLoginMode] = useState<'admin' | 'customer'>('admin')
 
-  // OAuth
-  const [oauthDialogOpen, setOauthDialogOpen] = useState(false)
-  const [oauthProvider, setOauthProvider] = useState('')
-  const [oauthEmail, setOauthEmail] = useState('')
-  const [oauthLoading, setOauthLoading] = useState(false)
+  // Customer registration extra fields
+  const [regName, setRegName] = useState('')
+  const [regCompany, setRegCompany] = useState('')
+  const [regPhone, setRegPhone] = useState('')
 
   // Forgot password
   const [forgotOpen, setForgotOpen] = useState(false)
@@ -72,10 +77,34 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   const [forgotShowPassword, setForgotShowPassword] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
 
-  // How to use dialog
-  const [howToOpen, setHowToOpen] = useState(false)
+  const isCustomer = authMode === 'customer'
+  const isRegister = authAction === 'register'
 
-  const handleLogin = useCallback(async (e: React.FormEvent) => {
+  // Switch mode — reset form
+  const switchMode = (mode: AuthMode) => {
+    if (mode !== authMode) {
+      setAuthMode(mode)
+      setAuthAction('login')
+      resetForm()
+    }
+  }
+
+  const switchAction = (action: AuthAction) => {
+    setAuthAction(action)
+    setError('')
+  }
+
+  const resetForm = () => {
+    setEmail('')
+    setPassword('')
+    setRegName('')
+    setRegCompany('')
+    setRegPhone('')
+    setError('')
+  }
+
+  // ═══ ADMIN LOGIN ═══
+  const handleAdminLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -93,11 +122,10 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       if (res.ok) {
         const data = await res.json().catch(() => null)
         const role = MASTER_ADMIN_EMAILS.includes(email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : (data?.user?.role || 'member')
-        const portalType = loginMode
-        const authData = { name: data?.user?.name || email.split('@')[0], email, role, portalType, loggedIn: true }
+        const authData = { name: data?.user?.name || email.split('@')[0], email, role, portalType: 'admin' as const, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
-        toast.success(portalType === 'customer' ? 'Welcome to your Customer Portal!' : 'Welcome to VSUAL NXL BYLDR Command Center!')
-        onLogin({ name: authData.name, email, role, portalType })
+        toast.success('Welcome to VSUAL NXL BYLDR Command Center!')
+        onLogin({ name: authData.name, email, role, portalType: 'admin' })
       } else {
         const data = await res.json().catch(() => ({}))
         setError(data?.error || data?.message || 'Invalid credentials.')
@@ -110,38 +138,91 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     }
   }, [email, password, onLogin])
 
-  const handleOAuth = useCallback((provider: string) => {
-    setOauthProvider(provider)
-    setOauthEmail('')
-    setOauthDialogOpen(true)
-  }, [])
-
-  const handleOAuthSubmit = useCallback(async () => {
-    if (!oauthEmail.trim() || !oauthEmail.includes('@')) { toast.error('Enter a valid email.'); return }
-    setOauthLoading(true)
+  // ═══ CUSTOMER LOGIN ═══
+  const handleCustomerLogin = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both email and password.')
+      setLoading(false)
+      return
+    }
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: oauthEmail.split('@')[0], email: oauthEmail, provider: oauthProvider }),
+      const res = await fetch('/api/auth/customer-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       })
       if (res.ok) {
         const data = await res.json()
-        const role = MASTER_ADMIN_EMAILS.includes(oauthEmail.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : 'member'
-        const portalType = loginMode
-        const authData = { name: data.name || oauthEmail.split('@')[0], email: data.email || oauthEmail, role, portalType, loggedIn: true }
+        const authData = { name: data.user.name, email: data.user.email, role: 'customer', portalType: 'customer' as const, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
-        toast.success(portalType === 'customer' ? 'Welcome to your Customer Portal!' : 'Welcome to VSUAL NXL BYLDR Command Center!')
-        setOauthDialogOpen(false)
-        onLogin({ name: authData.name, email: authData.email, role: authData.role, portalType })
+        toast.success(`Welcome to your Customer Portal, ${data.user.name}!`)
+        onLogin({ name: data.user.name, email: data.user.email, role: 'customer', portalType: 'customer' })
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data?.error || 'Failed to sign in.')
+        setError(data?.error || 'Invalid credentials.')
       }
     } catch {
-      toast.error('Network error. Please try again.')
-    } finally { setOauthLoading(false) }
-  }, [oauthEmail, oauthProvider, onLogin])
+      setError('Network error. Please check your connection and try again.')
+      toast.error('Unable to connect to server.')
+    } finally {
+      setLoading(false)
+    }
+  }, [email, password, onLogin])
 
+  // ═══ CUSTOMER REGISTER ═══
+  const handleCustomerRegister = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    if (!regName.trim()) {
+      setError('Please enter your full name.')
+      setLoading(false)
+      return
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setError('Please enter a valid email address.')
+      setLoading(false)
+      return
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.')
+      setLoading(false)
+      return
+    }
+    try {
+      const res = await fetch('/api/auth/customer-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regName.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          company: regCompany.trim() || undefined,
+          phone: regPhone.trim() || undefined,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const authData = { name: data.name, email: data.email, role: 'customer', portalType: 'customer' as const, loggedIn: true }
+        localStorage.setItem('vsual_auth', JSON.stringify(authData))
+        toast.success('Account created! Welcome to your Customer Portal!')
+        onLogin({ name: data.name, email: data.email, role: 'customer', portalType: 'customer' })
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setError(data?.error || 'Registration failed.')
+      }
+    } catch {
+      setError('Network error. Please try again.')
+      toast.error('Unable to connect to server.')
+    } finally {
+      setLoading(false)
+    }
+  }, [regName, email, password, regCompany, regPhone, onLogin])
+
+  // ═══ FORGOT PASSWORD ═══
   const openForgotPassword = () => { setForgotEmail(''); setForgotOtp(''); setForgotNewPassword(''); setForgotStep('email'); setForgotOpen(true) }
   const handleRequestOtp = async () => {
     if (!forgotEmail.trim() || !forgotEmail.includes('@')) { toast.error('Enter a valid email.'); return }
@@ -171,7 +252,16 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     } catch { toast.error('Failed.') } finally { setForgotLoading(false) }
   }
   const closeForgotAndLogin = () => { setForgotOpen(false); setEmail(forgotEmail); setPassword(''); setError('') }
-  const providerLabel = oauthProvider.charAt(0).toUpperCase() + oauthProvider.slice(1)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    if (isCustomer && isRegister) {
+      handleCustomerRegister(e)
+    } else if (isCustomer) {
+      handleCustomerLogin(e)
+    } else {
+      handleAdminLogin(e)
+    }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: '#0B0B0F' }}>
@@ -237,9 +327,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         <motion.div variants={fadeUp} className="mb-6">
           <div className="flex items-center gap-2 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
             <button
-              onClick={() => setLoginMode('admin')}
+              onClick={() => switchMode('admin')}
               className={`flex items-center gap-2 flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
-                loginMode === 'admin'
+                authMode === 'admin'
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -248,9 +338,9 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               <span>Admin Login</span>
             </button>
             <button
-              onClick={() => setLoginMode('customer')}
+              onClick={() => switchMode('customer')}
               className={`flex items-center gap-2 flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
-                loginMode === 'customer'
+                authMode === 'customer'
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -269,20 +359,43 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
               <div className="text-center mb-6">
                 <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 mb-3">
-                  {loginMode === 'admin' ? <ShieldCheck className="h-3.5 w-3.5 text-primary" /> : <UserCheck className="h-3.5 w-3.5 text-primary" />}
-                  <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">Secure Login</span>
+                  {isCustomer ? <UserCheck className="h-3.5 w-3.5 text-primary" /> : <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
+                  <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    {isCustomer ? 'Customer Portal' : 'Secure Admin'}
+                  </span>
                 </div>
                 <h2 className="text-lg font-bold text-foreground">
-                  {loginMode === 'admin' ? 'Admin Sign In' : 'Customer Sign In'}
+                  {isCustomer
+                    ? (isRegister ? 'Create Your Account' : 'Customer Sign In')
+                    : 'Admin Sign In'
+                  }
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {loginMode === 'admin'
-                    ? 'Access your VSUAL NXL BYLDR Command Center'
-                    : 'Access your project journey & contact Sal & Geo'}
+                  {isCustomer
+                    ? (isRegister
+                      ? 'Join VSUAL NXL BYLDR — track your project & contact Sal & Geo'
+                      : 'Access your project journey & contact Sal & Geo')
+                    : 'Access your VSUAL NXL BYLDR Command Center'
+                  }
                 </p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+
+                {/* ═══ CUSTOMER REGISTRATION: Name Field ═══ */}
+                {isCustomer && isRegister && (
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-name" className="text-sm text-foreground">Full Name *</Label>
+                    <div className="relative">
+                      <UserCheck className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input id="reg-name" type="text" placeholder="Your full name"
+                        value={regName} onChange={(e) => { setRegName(e.target.value); setError('') }}
+                        className="h-11 border-border bg-background/50 pl-9 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-primary/30" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm text-foreground">Email Address</Label>
                   <div className="relative">
@@ -293,11 +406,15 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                   </div>
                 </div>
 
+                {/* Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm text-foreground">Password</Label>
+                  <Label htmlFor="password" className="text-sm text-foreground">
+                    Password {isCustomer && isRegister && <span className="text-muted-foreground">(min 6 chars)</span>}
+                  </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password"
+                    <Input id="password" type={showPassword ? 'text' : 'password'}
+                      placeholder={isCustomer && isRegister ? 'Create a password' : 'Enter your password'}
                       value={password} onChange={(e) => { setPassword(e.target.value); setError('') }}
                       className="h-11 border-border bg-background/50 pl-9 pr-10 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-primary/30" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -307,72 +424,125 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                   </div>
                 </div>
 
+                {/* ═══ CUSTOMER REGISTRATION: Company & Phone ═══ */}
+                {isCustomer && isRegister && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-company" className="text-sm text-foreground">Company</Label>
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input id="reg-company" type="text" placeholder="Company name"
+                          value={regCompany} onChange={(e) => setRegCompany(e.target.value)}
+                          className="h-11 border-border bg-background/50 pl-9 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-primary/30" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-phone" className="text-sm text-foreground">Phone</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input id="reg-phone" type="tel" placeholder="+1 (555) 000-0000"
+                          value={regPhone} onChange={(e) => setRegPhone(e.target.value)}
+                          className="h-11 border-border bg-background/50 pl-9 text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-primary/30" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {error && (
                   <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-sm text-destructive bg-destructive/5 border border-destructive/10 rounded-lg px-3 py-2">
                     {error}
                   </motion.p>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Checkbox id="remember" checked={remember} onCheckedChange={(c) => setRemember(c === true)}
-                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                    <Label htmlFor="remember" className="text-xs text-muted-foreground cursor-pointer">Remember me</Label>
+                {/* Admin: Remember me + Forgot password */}
+                {!isCustomer && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="remember" checked={remember} onCheckedChange={(c) => setRemember(c === true)}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                      <Label htmlFor="remember" className="text-xs text-muted-foreground cursor-pointer">Remember me</Label>
+                    </div>
+                    <button type="button" onClick={openForgotPassword} className="text-xs text-primary hover:text-primary/80 transition-colors">
+                      Forgot password?
+                    </button>
                   </div>
-                  <button type="button" onClick={openForgotPassword} className="text-xs text-primary hover:text-primary/80 transition-colors">
-                    Forgot password?
-                  </button>
-                </div>
+                )}
 
                 <Button type="submit" disabled={loading}
                   className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-semibold text-sm transition-all hover:shadow-xl hover:shadow-primary/30">
-                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : <>Sign In<ArrowRight className="ml-2 h-4 w-4" /></>}
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isRegister ? 'Creating account...' : 'Signing in...'}</> : <>{isRegister ? 'Create Account' : 'Sign In'}<ArrowRight className="ml-2 h-4 w-4" /></>}
                 </Button>
               </form>
 
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-3 text-muted-foreground bg-[#14141A]/80">or continue with</span>
-                </div>
-              </div>
+              {/* Customer: Login / Register toggle */}
+              {isCustomer && (
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                  {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
+                  <button onClick={() => switchAction(isRegister ? 'login' : 'register')} className="text-primary hover:text-primary/80 font-semibold">
+                    {isRegister ? 'Sign In' : 'Create one free'}
+                  </button>
+                </p>
+              )}
 
-              <div className="grid grid-cols-3 gap-3">
-                <Button type="button" variant="outline" onClick={() => handleOAuth('google')}
-                  className="h-11 border-border bg-white hover:bg-gray-50 text-gray-700 flex flex-col items-center justify-center gap-1 py-2 px-1">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                  </svg>
-                  <span className="text-[11px] font-medium">Google</span>
-                </Button>
-                <Button type="button" variant="outline" onClick={() => handleOAuth('apple')}
-                  className="h-11 border-border bg-white hover:bg-gray-50 text-gray-700 flex flex-col items-center justify-center gap-1 py-2 px-1">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                  </svg>
-                  <span className="text-[11px] font-medium">Apple</span>
-                </Button>
-                <Button type="button" variant="outline" onClick={() => handleOAuth('microsoft')}
-                  className="h-11 border-border bg-white hover:bg-gray-50 text-gray-700 flex flex-col items-center justify-center gap-1 py-2 px-1">
-                  <svg viewBox="0 0 23 23" className="h-4 w-4">
-                    <rect x="1" y="1" width="10" height="10" fill="#F25022" />
-                    <rect x="12" y="1" width="10" height="10" fill="#7FBA00" />
-                    <rect x="1" y="12" width="10" height="10" fill="#00A4EF" />
-                    <rect x="12" y="12" width="10" height="10" fill="#FFB900" />
-                  </svg>
-                  <span className="text-[11px] font-medium">Microsoft</span>
-                </Button>
-              </div>
-
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                Don&apos;t have an account?{' '}
-                <button onClick={() => handleOAuth('signup')} className="text-primary hover:text-primary/80 font-semibold">
-                  Create one free
-                </button>
-              </p>
+              {/* Admin: OAuth */}
+              {!isCustomer && (
+                <>
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-3 text-muted-foreground bg-[#14141A]/80">or continue with</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['google', 'apple', 'microsoft'].map((provider) => {
+                      const label = provider.charAt(0).toUpperCase() + provider.slice(1)
+                      return (
+                        <Button key={provider} type="button" variant="outline"
+                          onClick={() => {
+                            const oauthRes = fetch('/api/auth/register', {
+                              method: 'POST', headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ name: email.split('@')[0] || 'User', email: email || `${provider}-user@vsual.com`, provider }),
+                            }).then(r => r.ok ? r.json() : null).then(data => {
+                              if (data) {
+                                const role = MASTER_ADMIN_EMAILS.includes((data.email || '').toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : (data.role || 'member')
+                                const authData = { name: data.name || email.split('@')[0], email: data.email || email, role, portalType: 'admin' as const, loggedIn: true }
+                                localStorage.setItem('vsual_auth', JSON.stringify(authData))
+                                toast.success('Welcome to VSUAL NXL BYLDR Command Center!')
+                                onLogin({ name: authData.name, email: authData.email, role, portalType: 'admin' })
+                              } else {
+                                toast.error(`Failed to sign in with ${label}`)
+                              }
+                            }).catch(() => toast.error('Network error.'))
+                          }}
+                          className="h-11 border-border bg-white hover:bg-gray-50 text-gray-700 flex flex-col items-center justify-center gap-1 py-2 px-1">
+                          {provider === 'google' && (
+                            <svg viewBox="0 0 24 24" className="h-4 w-4">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                            </svg>
+                          )}
+                          {provider === 'apple' && (
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                            </svg>
+                          )}
+                          {provider === 'microsoft' && (
+                            <svg viewBox="0 0 23 23" className="h-4 w-4">
+                              <rect x="1" y="1" width="10" height="10" fill="#F25022" />
+                              <rect x="12" y="1" width="10" height="10" fill="#7FBA00" />
+                              <rect x="1" y="12" width="10" height="10" fill="#00A4EF" />
+                              <rect x="12" y="12" width="10" height="10" fill="#FFB900" />
+                            </svg>
+                          )}
+                          <span className="text-[11px] font-medium">{label}</span>
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </motion.div>
@@ -461,85 +631,6 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                 <Button onClick={closeForgotAndLogin} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Back to Sign In<ArrowRight className="ml-2 h-4 w-4" /></Button>
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ═══ HOW TO USE DIALOG ═══ */}
-      <Dialog open={howToOpen} onOpenChange={setHowToOpen}>
-        <DialogContent className="sm:max-w-lg bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground text-lg">How to use your VSUAL NXL BYLDR Command Center</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Your growth, marketing & AI automation hub — get the status of your build in 5 seconds.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-2">Status Lights — Setup Progress</h4>
-              <ul className="space-y-2 text-xs text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-primary shrink-0" />
-                  <span><strong className="text-primary">Magenta</strong> — We&apos;ve finished that part of the build.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-amber-400 animate-pulse shrink-0" />
-                  <span><strong className="text-amber-400">Pulsing</strong> — We&apos;re currently working on this step.</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-muted-foreground/40 shrink-0" />
-                  <span><strong className="text-muted-foreground">Grey</strong> — We haven&apos;t reached that stage yet.</span>
-                </li>
-              </ul>
-            </div>
-            <div className="rounded-lg border border-border p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-2">Action Bar</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Check the bar at the top of your dashboard. If it&apos;s <strong className="text-primary">Magenta</strong>, we need a quick &quot;OK&quot; or a code from you. 
-                If it&apos;s clear and says <strong className="text-foreground">&quot;All Systems Go,&quot;</strong> you&apos;re all set.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-2">Your Role</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Check this once a day. If the top bar says &quot;All Systems Go,&quot; you&apos;re all set. 
-                If it asks for an action, please handle it quickly so we can keep your lead machine moving.
-              </p>
-            </div>
-            <div className="rounded-lg border border-border p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-2">4 Phases of Your Build</h4>
-              <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside">
-                <li><strong className="text-foreground">The Handover</strong> — Gathering your business info</li>
-                <li><strong className="text-foreground">The Game Plan</strong> — Planning your lead strategy</li>
-                <li><strong className="text-foreground">Technical Foundation</strong> — Building your ads and CRM sync</li>
-                <li><strong className="text-foreground">Live &amp; Running</strong> — Getting you on job sites</li>
-              </ol>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ═══ OAUTH DIALOG ═══ */}
-      <Dialog open={oauthDialogOpen} onOpenChange={setOauthDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Sign in with {providerLabel}</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Enter your email to get started instantly</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label className="text-sm text-foreground">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="email" placeholder="you@example.com" value={oauthEmail} onChange={(e) => setOauthEmail(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleOAuthSubmit() } }}
-                  className="h-11 border-border bg-background pl-9 text-foreground" />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setOauthDialogOpen(false)} className="flex-1 border-border">Cancel</Button>
-              <Button onClick={handleOAuthSubmit} disabled={oauthLoading} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                {oauthLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : <>Sign In<ArrowRight className="ml-1 h-4 w-4" /></>}
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

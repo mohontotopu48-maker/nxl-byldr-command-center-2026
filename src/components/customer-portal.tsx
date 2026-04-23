@@ -16,6 +16,10 @@ import {
   ShieldCheck,
   Zap,
   BarChart3,
+  User,
+  Phone,
+  Building2,
+  ExternalLink,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -106,7 +110,7 @@ interface ContactMessage {
   updatedAt: string
 }
 
-type TabId = 'dashboard' | 'my-journey' | 'contact-us'
+type TabId = 'dashboard' | 'my-journey' | 'contact-us' | 'my-profile'
 
 /* ═══════════════════════════════════════════════════════════════ */
 /*  Constants & Helpers                                               */
@@ -123,7 +127,13 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'my-journey', label: 'My Journey', icon: Route },
   { id: 'contact-us', label: 'Contact Us', icon: Mail },
+  { id: 'my-profile', label: 'My Profile', icon: User },
 ]
+
+const SAL_GEO_CONTACT = [
+  { name: 'Sal', email: 'info.vsualdm@gmail.com', role: 'Master Admin · Operations' },
+  { name: 'Geo', email: 'geovsualdm@gmail.com', role: 'Master Admin · Strategy' },
+] as const
 
 const SUBJECT_OPTIONS = [
   'General Inquiry',
@@ -340,7 +350,18 @@ export function CustomerPortal({ auth, onLogout }: CustomerPortalProps) {
                 animate="animate"
                 exit="exit"
               >
-                <ContactUsTab auth={auth} />
+                <ContactUsTab auth={auth} onSwitchToProfile={() => setActiveTab('my-profile')} />
+              </motion.div>
+            )}
+            {activeTab === 'my-profile' && (
+              <motion.div
+                key="my-profile"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <MyProfileTab auth={auth} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -931,7 +952,7 @@ function MyJourneyTab({ auth }: { auth: { name: string; email: string; role: str
 /*  Contact Us Tab                                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function ContactUsTab({ auth }: { auth: { name: string; email: string; role: string } }) {
+function ContactUsTab({ auth, onSwitchToProfile }: { auth: { name: string; email: string; role: string }; onSwitchToProfile?: () => void }) {
   // Form state
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
@@ -1011,6 +1032,44 @@ function ContactUsTab({ auth }: { auth: { name: string; email: string; role: str
         <p className="text-sm text-muted-foreground">
           Send a message to Sal & Geo — your VSUAL project managers
         </p>
+      </motion.div>
+
+      {/* Sal & Geo Team Card */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Your VSUAL Project Team
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              Your messages go directly to both Sal & Geo — co-founders of VSUAL NXL BYLDR
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {SAL_GEO_CONTACT.map((person) => (
+                <a
+                  key={person.email}
+                  href={`mailto:${person.email}`}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-background/50 p-3 transition-all hover:border-primary/40 hover:bg-primary/5 group"
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                      {person.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{person.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{person.email}</p>
+                    <p className="text-[10px] text-primary font-medium">{person.role}</p>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Contact Form */}
@@ -1262,6 +1321,200 @@ function ContactUsTab({ auth }: { auth: { name: string; email: string; role: str
             ))}
           </div>
         )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  My Profile Tab                                                  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+interface CustomerProfile {
+  id: string
+  name: string
+  email: string
+  company?: string | null
+  phone?: string | null
+  status: string
+  plan: string
+  revenue: number
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+function MyProfileTab({ auth }: { auth: { name: string; email: string; role: string } }) {
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<CustomerProfile | null>(null)
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await fetch('/api/customers')
+      if (res.ok) {
+        const json = await res.json()
+        const customers: CustomerProfile[] = Array.isArray(json) ? json : []
+        const me = customers.find(
+          (c) => c.email?.toLowerCase() === auth.email?.toLowerCase()
+        )
+        if (me) setProfile(me)
+      }
+    } catch {
+      // Use auth data as fallback
+    } finally {
+      setLoading(false)
+    }
+  }, [auth.email])
+
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+        <span className="ml-2 text-sm text-muted-foreground">Loading profile...</span>
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      {/* Header */}
+      <motion.div variants={itemVariants}>
+        <h2 className="text-xl font-bold text-foreground">My Profile</h2>
+        <p className="text-sm text-muted-foreground">
+          View your account details and subscription information
+        </p>
+      </motion.div>
+
+      {/* Profile Card */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border bg-card">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                  {getInitials(auth.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-lg font-bold text-foreground">{auth.name}</h3>
+                <p className="text-sm text-muted-foreground">{auth.email}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-2 justify-center sm:justify-start">
+                  <Badge className="bg-primary/10 text-primary text-xs">
+                    {profile?.plan?.toUpperCase() || 'FREE'} Plan
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-500">
+                    {profile?.status || 'Active'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Account Details */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              Account Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Full Name</Label>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  {profile?.name || auth.name}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  {auth.email}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Company</Label>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  {profile?.company || 'Not set'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Phone</Label>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                  {profile?.phone || 'Not set'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Member Since</Label>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  {profile?.createdAt ? formatDate(profile.createdAt) : 'N/A'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Last Updated</Label>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Zap className="h-3.5 w-3.5 text-muted-foreground" />
+                  {profile?.updatedAt ? formatDate(profile.updatedAt) : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* VSUAL Support Team */}
+      <motion.div variants={itemVariants}>
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              VSUAL NXL BYLDR Support Team
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              Need help? Reach out to your dedicated project managers
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {SAL_GEO_CONTACT.map((person) => (
+                <a
+                  key={person.email}
+                  href={`mailto:${person.email}`}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-background/50 p-3 transition-all hover:border-primary/40 hover:bg-primary/5 group"
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                      {person.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{person.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{person.email}</p>
+                    <p className="text-[10px] text-primary font-medium">{person.role}</p>
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
     </motion.div>
   )
