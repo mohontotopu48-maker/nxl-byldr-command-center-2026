@@ -16,7 +16,6 @@ import {
   Plus,
   UserPlus,
   FileBarChart,
-  X,
   Save,
   PenLine,
 } from 'lucide-react'

@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Clock, Flame } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
@@ -22,6 +21,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
   const fetchLeads = useCallback(async () => {
     try {
       const res = await fetch('/api/mpz/leads')
+      if (!res.ok) return
       const data = await res.json()
       setLeads(data)
     } catch {

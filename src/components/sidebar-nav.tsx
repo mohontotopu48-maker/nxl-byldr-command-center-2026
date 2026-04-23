@@ -12,6 +12,7 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  Menu,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,6 @@ import {
   SheetTrigger,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { Menu } from 'lucide-react'
 
 export type NavView = 'dashboard' | 'projects' | 'team' | 'customers' | 'analytics' | 'settings' | 'masters-plan'
 

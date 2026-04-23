@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Plus,
@@ -116,11 +116,7 @@ export function TeamView() {
   const [formEmail, setFormEmail] = useState('')
   const [formRole, setFormRole] = useState<string>('member')
 
-  useEffect(() => {
-    fetchMembers()
-  }, [])
-
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       const res = await fetch('/api/team')
       if (res.ok) {
@@ -132,7 +128,11 @@ export function TeamView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchMembers()
+  }, [fetchMembers])
 
   const handleAddMember = async () => {
     if (!formName.trim() || !formEmail.trim()) {

@@ -1,17 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Plus,
   Search,
   MoreHorizontal,
-  UserCheck,
   Mail,
   Building2,
-  DollarSign,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -102,11 +100,7 @@ export function CustomersView() {
   const [formPhone, setFormPhone] = useState('')
   const [formPlan, setFormPlan] = useState<string>('free')
 
-  useEffect(() => {
-    fetchCustomers()
-  }, [])
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       const res = await fetch('/api/customers')
       if (res.ok) {
@@ -118,7 +112,11 @@ export function CustomersView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchCustomers()
+  }, [fetchCustomers])
 
   const handleSubmit = async () => {
     if (!formName.trim() || !formEmail.trim()) {

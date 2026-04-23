@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, provider } = await request.json()
+    const { name, email, password } = await request.json()
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
