@@ -1,3 +1,4 @@
+import type { ClientSetupStep } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -92,7 +93,7 @@ export async function POST(
       return NextResponse.json({ error: 'updates array required' }, { status: 400 })
     }
 
-    const results = []
+    const results: ClientSetupStep[] = []
     for (const { stepId, status } of updates) {
       const step = await db.clientSetupStep.update({
         where: { id: stepId },

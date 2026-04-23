@@ -1,13 +1,20 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["*.space.z.ai", "*.z.ai"],
+  turbopack: {
+    root: projectRoot,
+  },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   reactStrictMode: false,
   // Prisma client must be externalized for serverless environments (Vercel)
-  serverExternalPackages: ["@prisma/client"],
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
   async headers() {
     return [
       {

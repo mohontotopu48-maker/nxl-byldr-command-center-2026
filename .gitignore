@@ -26,6 +26,7 @@ yarn-error.log*
 # env files
 .env
 .env*.local
+.z-ai-config
 
 # vercel
 .vercel
@@ -37,6 +38,11 @@ next-env.d.ts
 # prisma
 db/*.db-journal
 db/*.db
+prisma/**/*.db
+prisma/**/*.db-journal
+
+# Hugging Face CLI: `npm run hf:sync:down` target (bucket mirror)
+/local/
 
 # IDE
 .vscode/

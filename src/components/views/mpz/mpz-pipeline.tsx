@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import { PIPELINE_STAGES, getTimeAgo, getStageLabel, getStageBgClass, type MpzLead } from './constants'
 
 interface MpzPipelineProps {
