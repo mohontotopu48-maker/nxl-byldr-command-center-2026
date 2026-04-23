@@ -11,8 +11,8 @@ model Project {
   id          String   @id @default(cuid())
   name        String
   description String?
-  status      String   @default("active") // active, paused, completed, archived
-  priority    String   @default("medium") // low, medium, high, critical
+  status      String   @default("active")
+  priority    String   @default("medium")
   progress    Int      @default(0)
   startDate   DateTime?
   endDate     DateTime?
@@ -25,7 +25,7 @@ model Task {
   id          String   @id @default(cuid())
   title       String
   description String?
-  status      String   @default("todo") // todo, in_progress, review, done
+  status      String   @default("todo")
   priority    String   @default("medium")
   projectId   String
   assigneeId  String?
@@ -41,7 +41,7 @@ model TeamMember {
   name      String
   email     String   @unique
   password  String   @default("")
-  role      String   @default("member") // admin, manager, member, master_admin
+  role      String   @default("member")
   avatar    String?
   status    String   @default("active")
   phone     String?
@@ -54,10 +54,10 @@ model TeamMember {
 
 model Activity {
   id        String   @id @default(cuid())
-  type      String   // project_created, task_completed, member_joined, etc.
+  type      String
   message   String
   userId    String?
-  metadata  String?  // JSON string for additional data
+  metadata  String?
   createdAt DateTime @default(now())
 }
 
@@ -76,8 +76,8 @@ model Customer {
   email     String   @unique
   company   String?
   phone     String?
-  status    String   @default("active") // active, inactive, lead
-  plan      String   @default("free")   // free, pro, enterprise
+  status    String   @default("active")
+  plan      String   @default("free")
   revenue   Float    @default(0)
   notes     String?
   createdAt DateTime @default(now())
@@ -98,8 +98,8 @@ model SetupStep {
   stepNumber  Int      @unique
   title       String
   description String?
-  phase       String   @default("handover") // handover, game_plan, technical, live
-  status      String   @default("pending") // completed, in_progress, pending
+  phase       String   @default("handover")
+  status      String   @default("pending")
   completedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

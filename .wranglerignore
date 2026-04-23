@@ -1,0 +1,3 @@
+# Cloudflare Pages deployment output
+.wrangler/
+.worker-next/

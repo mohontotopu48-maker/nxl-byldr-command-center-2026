@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  // Required for Cloudflare Pages
+  serverExternalPackages: ["@prisma/client", "better-sqlite3"],
   async headers() {
     return [
       {

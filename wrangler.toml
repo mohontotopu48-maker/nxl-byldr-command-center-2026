@@ -1,0 +1,19 @@
+name = "nxl-byldr-command-center"
+compatibility_date = "2025-04-23"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "nxl-byldr-db"
+database_id = "YOUR_D1_DATABASE_ID"  # Replace after running: wrangler d1 create nxl-byldr-db
+
+# Environment variables
+[vars]
+NEXTAUTH_SECRET = "vsual-business-os-secret-key-2025"
+NEXTAUTH_URL = "https://nxl-byldr-command-center.pages.dev"
+DATABASE_URL = "file:./db/custom.db"
+
+# Production environment overrides
+[env.production]
+name = "nxl-byldr-command-center"
