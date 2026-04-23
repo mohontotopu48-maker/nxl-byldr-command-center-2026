@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     const zai = await ZAI.create()
 
     const systemPrompt = context
-      ? `You are an AI assistant for VSUAL Business OS. ${context}`
-      : `You are an AI assistant for VSUAL Business OS — the all-in-one command center for project management, team collaboration, and growth analytics. You help users manage projects, teams, customers, and analytics. Be concise, helpful, and professional. Keep responses under 200 words unless asked for detailed analysis.`
+      ? `You are an AI assistant for VSUAL NXL BYLDR Command Center. ${context}`
+      : `You are an AI assistant for VSUAL NXL BYLDR Command Center — the growth, marketing & AI automation hub for project management, team collaboration, and lead activity tracking. You help users manage projects, teams, customers, and analytics. Be concise, helpful, and professional. Keep responses under 200 words unless asked for detailed analysis.`
 
     const completion = await zai.chat.completions.create({
       messages: [

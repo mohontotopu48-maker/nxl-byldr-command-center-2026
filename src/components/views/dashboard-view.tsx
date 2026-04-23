@@ -237,15 +237,26 @@ export function DashboardView() {
       {/* ═══ WELCOME BANNER ═══ */}
       <motion.div variants={itemVariants}>
         <Card className="overflow-hidden border-border bg-card">
-          <div className="relative h-36 md:h-44">
-            <img src="/dashboard-banner.png" alt="Welcome Banner" className="absolute inset-0 h-full w-full object-cover opacity-40" />
-            <div className="absolute inset-0 bg-gradient-to-r from-card via-card/80 to-transparent" />
+          <div className="relative h-44 md:h-52">
+            {/* Background image */}
+            <img src="/dashboard-banner.png" alt="Dashboard Banner" className="absolute inset-0 h-full w-full object-cover opacity-50" />
+            {/* VSUAL brand watermark */}
+            <div className="absolute top-3 right-3 md:top-5 md:right-5 opacity-[0.08] pointer-events-none">
+              <img src="/vsual-brand-cover.jpg" alt="" className="h-32 w-32 md:h-40 md:w-40 object-contain" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0F] via-[#0B0B0F]/85 to-[#0B0B0F]/30" />
             <div className="absolute inset-0 flex items-center px-6 md:px-8">
-              <div>
-                <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-                  Welcome back, <span className="text-primary">{userName}</span>
+              <div className="max-w-lg">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Welcome back,</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-primary">
+                  {userName}
                 </h1>
-                <p className="mt-1 text-sm text-muted-foreground">Your central hub for tracking project status and lead activity.</p>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                  Growth · Marketing · AI Automation — your complete business ecosystem.
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground/60 tracking-wider uppercase">
+                  VSUAL NXL BYLDR Command Center
+                </p>
               </div>
             </div>
           </div>
@@ -542,8 +553,8 @@ function HowToUseDialog() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground text-lg">How to use your VSUAL Business OS</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Your central hub — get the status of your build in 5 seconds.</DialogDescription>
+            <DialogTitle className="text-foreground text-lg">How to use your VSUAL NXL BYLDR Command Center</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Your growth, marketing & AI automation hub — get the status of your build in 5 seconds.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

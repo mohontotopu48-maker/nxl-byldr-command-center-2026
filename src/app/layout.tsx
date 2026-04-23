@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VSUAL Business OS | Command Center",
+  title: "VSUAL NXL BYLDR Command Center",
   description:
-    "VSUAL Business OS — The all-in-one command center for project management, team collaboration, and growth analytics.",
+    "VSUAL Digital Media — Growth, Marketing & AI Automation Command Center for project management, team collaboration, and lead activity tracking.",
   icons: {
     icon: "https://i.ibb.co.com/mV5xXLnB/VSUAL.png",
   },

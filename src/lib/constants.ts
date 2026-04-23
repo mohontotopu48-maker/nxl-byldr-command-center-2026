@@ -1,11 +1,13 @@
 export const VSUAL_LOGO = "https://i.ibb.co.com/mV5xXLnB/VSUAL.png";
-export const VSUAL_COVER = "https://i.ibb.co.com/qYGkWhTC/vsualdm-left-top-icon-bk-nw-ht.jpg";
+export const VSUAL_COVER = "/vsual-brand-cover.jpg";
 export const CA_LOGO = "https://i.ibb.co.com/2R1C5xG/image.png";
 
 export const BRAND = {
-  name: "VSUAL BUSINESS OS",
+  name: "VSUAL NXL BYLDR",
   tagline: "Command Center",
+  fullName: "VSUAL NXL BYLDR Command Center",
   poweredBy: "VSUAL",
+  taglineText: "Digital Media · Promotional Marketing Agency",
   version: "2.0.0",
 } as const;
 

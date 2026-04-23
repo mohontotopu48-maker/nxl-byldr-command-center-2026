@@ -93,7 +93,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         const role = MASTER_ADMIN_EMAILS.includes(email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : (data?.user?.role || 'member')
         const authData = { name: data?.user?.name || email.split('@')[0], email, role, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
-        toast.success('Welcome to VSUAL Business OS!')
+        toast.success('Welcome to VSUAL NXL BYLDR Command Center!')
         onLogin({ name: authData.name, email, role })
       } else {
         const data = await res.json().catch(() => ({}))
@@ -126,7 +126,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         const role = MASTER_ADMIN_EMAILS.includes(oauthEmail.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : 'member'
         const authData = { name: data.name || oauthEmail.split('@')[0], email: data.email || oauthEmail, role, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
-        toast.success('Welcome to VSUAL Business OS!')
+        toast.success('Welcome to VSUAL NXL BYLDR Command Center!')
         setOauthDialogOpen(false)
         onLogin({ name: authData.name, email: authData.email, role: authData.role })
       } else {
@@ -172,25 +172,30 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: '#0B0B0F' }}>
 
-      {/* Full Background Image */}
+      {/* Full Background Image - AI Growth/Marketing Ecosystem */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: 'url(/landing-bg.png)' }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0B0B0F]/60 via-[#0B0B0F]/70 to-[#0B0B0F]/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0B0B0F]/50 via-[#0B0B0F]/65 to-[#0B0B0F]/92" />
+
+      {/* VSUAL Brand Watermark - top left */}
+      <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 opacity-[0.07] pointer-events-none">
+        <img src="/vsual-brand-cover.jpg" alt="" className="h-28 w-28 md:h-36 md:w-36 object-contain" />
+      </div>
 
       {/* Background layers */}
-      <div className="animate-mesh absolute inset-0 opacity-40"
+      <div className="animate-mesh absolute inset-0 opacity-30"
         style={{ background: 'linear-gradient(125deg, #0B0B0F 0%, #1a0a14 25%, #0B0B0F 50%, #140a1a 75%, #0B0B0F 100%)' }} />
       <div className="absolute inset-0 animate-grid-pulse"
         style={{
-          backgroundImage: 'linear-gradient(rgba(255,0,153,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,153,0.04) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(255,0,153,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,153,0.03) 1px, transparent 1px)',
           backgroundSize: '60px 60px',
         }} />
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full animate-orb-1 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(255,0,153,0.08) 0%, transparent 70%)' }} />
-      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full animate-orb-2 pointer-events-none"
         style={{ background: 'radial-gradient(circle, rgba(255,0,153,0.06) 0%, transparent 70%)' }} />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full animate-orb-2 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(255,0,153,0.04) 0%, transparent 70%)' }} />
       <div className="absolute inset-x-0 h-px animate-scan-line pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,0,153,0.15) 50%, transparent 100%)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,0,153,0.12) 50%, transparent 100%)' }} />
 
       {/* Main Content */}
       <motion.div
@@ -209,8 +214,8 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary animate-pulse-slow" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-bold tracking-wide text-foreground">VSUAL</span>
-            <span className="text-[11px] font-semibold text-primary tracking-wider uppercase">Business OS</span>
+            <span className="text-base font-bold tracking-wide text-foreground">VSUAL NXL BYLDR</span>
+            <span className="text-[10px] font-semibold text-primary tracking-wider uppercase">Command Center</span>
           </div>
         </motion.div>
 
@@ -220,7 +225,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
             Welcome to your <span className="text-primary">Command Center</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your central hub for tracking project status and lead activity.
+            Growth · Marketing · AI Automation — your complete business ecosystem.
           </p>
         </motion.div>
 
@@ -245,7 +250,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                   <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">Secure Login</span>
                 </div>
                 <h2 className="text-lg font-bold text-foreground">Sign In</h2>
-                <p className="text-xs text-muted-foreground mt-1">Access your VSUAL Business OS dashboard</p>
+                <p className="text-xs text-muted-foreground mt-1">Access your VSUAL NXL BYLDR Command Center</p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
@@ -347,7 +352,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         <motion.div variants={fadeUp} className="mt-8 flex flex-col sm:flex-row items-center gap-3 text-muted-foreground">
           <div className="flex items-center gap-2">
             <img src="https://i.ibb.co.com/2R1C5xG/image.png" alt="CA Logo" className="h-5 w-5 object-contain rounded" />
-            <span className="text-xs">Powered by <span className="text-primary font-semibold">VSUAL</span></span>
+            <span className="text-xs">Powered by <span className="text-primary font-semibold">VSUAL</span> — Digital Media · Promotional Marketing Agency</span>
           </div>
           <span className="hidden sm:block text-border">|</span>
           <div className="flex items-center gap-1.5 text-xs">
@@ -435,8 +440,8 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       <Dialog open={howToOpen} onOpenChange={setHowToOpen}>
         <DialogContent className="sm:max-w-lg bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground text-lg">How to use your VSUAL Business OS</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Your central hub — get the status of your build in 5 seconds.</DialogDescription>
+            <DialogTitle className="text-foreground text-lg">How to use your VSUAL NXL BYLDR Command Center</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Your growth, marketing & AI automation hub — get the status of your build in 5 seconds.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

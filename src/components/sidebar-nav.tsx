@@ -77,7 +77,7 @@ function SidebarContent({
             <h1 className="text-sm font-bold tracking-wide text-foreground">
               VSUAL
             </h1>
-            <p className="text-[11px] font-semibold text-primary tracking-wider uppercase">Business OS</p>
+            <p className="text-[11px] font-semibold text-primary tracking-wider uppercase">NXL BYLDR</p>
           </motion.div>
         )}
       </div>
