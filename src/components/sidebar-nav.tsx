@@ -7,6 +7,7 @@ import {
   FolderKanban,
   Users,
   UserCheck,
+  Route,
   BarChart3,
   Settings,
   Zap,
@@ -30,7 +31,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 
-export type NavView = 'dashboard' | 'projects' | 'team' | 'customers' | 'analytics' | 'settings' | 'masters-plan'
+export type NavView = 'dashboard' | 'projects' | 'team' | 'customers' | 'client-journey' | 'analytics' | 'settings' | 'masters-plan'
 
 interface SidebarNavProps {
   activeView: NavView
@@ -45,6 +46,7 @@ const navItems: { id: NavView; label: string; icon: React.ElementType; special?:
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'team', label: 'Team', icon: Users },
   { id: 'customers', label: 'Customers', icon: UserCheck },
+  { id: 'client-journey', label: 'Client Journey', icon: Route },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'masters-plan', label: 'Masters Plan Zone', icon: Zap, special: true },
   { id: 'settings', label: 'Settings', icon: Settings },

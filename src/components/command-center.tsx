@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SidebarNav, type NavView } from '@/components/sidebar-nav'
 import { HeaderBar } from '@/components/header-bar'
-import { DashboardView } from '@/components/views/dashboard-view'
+import { DashboardView, ClientJourneyView } from '@/components/views/dashboard-view'
 import { ProjectsView } from '@/components/views/projects-view'
 import { TeamView } from '@/components/views/team-view'
 import { CustomersView } from '@/components/views/customers-view'
@@ -20,6 +20,7 @@ const viewComponents: Record<NavView, React.ComponentType> = {
   projects: ProjectsView,
   team: TeamView,
   customers: CustomersView,
+  'client-journey': ClientJourneyView,
   analytics: AnalyticsView,
   'masters-plan': MastersPlanZone,
   settings: SettingsView,

@@ -71,17 +71,18 @@ model Metric {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  company   String?
-  phone     String?
-  status    String   @default("active")
-  plan      String   @default("free")
-  revenue   Float    @default(0)
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String          @id @default(cuid())
+  name        String
+  email       String          @unique
+  company     String?
+  phone       String?
+  status      String          @default("active")
+  plan        String          @default("free")
+  revenue     Float           @default(0)
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  journeys    ClientJourney[]
 }
 
 model OtpCode {
@@ -112,6 +113,65 @@ model AlertBar {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Per-Client Customer Journey Models                             */
+/* ═══════════════════════════════════════════════════════════════ */
+
+model ClientJourney {
+  id              String           @id @default(cuid())
+  customerId      String
+  currentPhase    String           @default("handover")
+  overallStatus   String           @default("in_progress")
+  completedSteps  Int              @default(0)
+  totalSteps      Int              @default(13)
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  setupSteps      ClientSetupStep[]
+  alerts          ClientAlert[]
+  automationLogs  AutomationLog[]
+}
+
+model ClientSetupStep {
+  id          String   @id @default(cuid())
+  journeyId   String
+  stepNumber  Int
+  title       String
+  description String?
+  phase       String   @default("handover")
+  status      String   @default("pending")
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  journey     ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+}
+
+model ClientAlert {
+  id        String   @id @default(cuid())
+  journeyId String
+  active    Boolean  @default(false)
+  message   String   @default("")
+  priority  String   @default("normal")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  journey   ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+}
+
+model AutomationLog {
+  id         String   @id @default(cuid())
+  journeyId  String
+  action     String
+  details    String?
+  triggeredBy String  @default("manual")
+  createdAt  DateTime @default(now())
+  journey    ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  MPZ Models (kept as-is)                                       */
+/* ═══════════════════════════════════════════════════════════════ */
 
 model MpzLead {
   id                 String   @id @default(cuid())
