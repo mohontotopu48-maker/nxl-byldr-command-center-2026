@@ -31,6 +31,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 /* ═══════════════════════════════════════════════════════════════ */
 /*  Types                                                             */
@@ -140,13 +141,13 @@ export function DashboardView() {
 
   // Fetch alert bar
   useEffect(() => {
-    fetch('/api/alert-bar').then(r => r.json()).then(data => setAlertData(data)).catch(() => {})
+    fetch('/api/alert-bar').then(r => r.ok ? r.json() : null).then(data => { if (data) setAlertData(data) }).catch(() => {})
   }, [])
 
   // Fetch setup steps
   useEffect(() => {
     fetch('/api/setup-steps')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : [])
       .then(data => { if (Array.isArray(data)) setSetupSteps(data) })
       .catch(() => {})
       .finally(() => setStepsLoading(false))
@@ -197,7 +198,7 @@ export function DashboardView() {
   ]
 
   const storedAuth = typeof window !== 'undefined' ? (() => { try { const a = localStorage.getItem('vsual_auth'); if (a) return JSON.parse(a); } catch {} return null })() : null
-  const isAdmin = storedAuth?.role === 'master_admin' || ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com'].includes(storedAuth?.email || '')
+  const isAdmin = storedAuth?.role === 'master_admin' || MASTER_ADMIN_EMAILS.includes(storedAuth?.email as typeof MASTER_ADMIN_EMAILS[number])
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-6 p-4 md:p-6">

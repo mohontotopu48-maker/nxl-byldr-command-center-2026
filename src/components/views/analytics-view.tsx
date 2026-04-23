@@ -97,15 +97,17 @@ export function AnalyticsView() {
 
   useEffect(() => {
     fetch('/api/dashboard')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : null)
       .then(data => {
-        setDashData({
-          totalProjects: data.totalProjects ?? 0,
-          activeTasks: data.activeTasks ?? 0,
-          teamMembers: data.teamMembers ?? 0,
-          totalCustomers: data.totalCustomers ?? 0,
-          completionRate: data.completionRate ?? 0,
-        })
+        if (data) {
+          setDashData({
+            totalProjects: data.totalProjects ?? 0,
+            activeTasks: data.activeTasks ?? 0,
+            teamMembers: data.teamMembers ?? 0,
+            totalCustomers: data.totalCustomers ?? 0,
+            completionRate: data.completionRate ?? 0,
+          })
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))

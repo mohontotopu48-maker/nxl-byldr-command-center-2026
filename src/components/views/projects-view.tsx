@@ -41,6 +41,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -180,22 +190,28 @@ export function ProjectsView() {
   }
 
   /* --- delete project ---------------------------------------------------- */
-  const handleDeleteProject = async (id: string, name: string) => {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const confirmDeleteProject = async () => {
+    if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/projects/${deleteTarget.id}`, { method: 'DELETE' })
       if (res.ok) {
-        toast.success(`"${name}" deleted`)
+        toast.success(`"${deleteTarget.name}" deleted`)
         fetchProjects()
       } else {
         toast.error('Failed to delete project')
       }
     } catch {
       toast.error('Failed to delete project')
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
   /* --- render ------------------------------------------------------------ */
   return (
+    <>
     <motion.div
       variants={containerVariants}
       initial="hidden"
@@ -355,7 +371,7 @@ export function ProjectsView() {
                           <DropdownMenuSeparator className="bg-border" />
                           <DropdownMenuItem
                             className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                            onClick={() => handleDeleteProject(project.id, project.name)}
+                            onClick={() => setDeleteTarget({ id: project.id, name: project.name })}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Project
@@ -439,5 +455,24 @@ export function ProjectsView() {
         </div>
       )}
     </motion.div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Delete Project</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This action cannot be undone and will remove all associated tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-background border-border text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteProject} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

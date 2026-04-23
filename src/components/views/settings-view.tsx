@@ -25,6 +25,7 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import {
@@ -67,8 +68,7 @@ export function SettingsView() {
     storedAuth ? { name: storedAuth.name || '', email: storedAuth.email || '', role: storedAuth.role || 'member' } : null
   )
 
-  const MASTER_ADMINS = ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com']
-  const isMasterAdmin = authInfo?.role === 'master_admin' || MASTER_ADMINS.includes(authInfo?.email || '')
+  const isMasterAdmin = authInfo?.role === 'master_admin' || MASTER_ADMIN_EMAILS.includes(authInfo?.email as typeof MASTER_ADMIN_EMAILS[number])
 
   const [profile, setProfile] = useState({
     name: authInfo?.name || 'User',
@@ -90,12 +90,16 @@ export function SettingsView() {
   const { theme, setTheme } = useTheme()
   const resolvedTheme = theme || 'dark'
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true)
-    setTimeout(() => {
-      setSaving(false)
+    try {
+      localStorage.setItem('vsual_profile', JSON.stringify(profile))
       toast.success('Profile saved successfully!')
-    }, 800)
+    } catch {
+      toast.error('Failed to save profile')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDeleteAccount = () => {
@@ -160,7 +164,7 @@ export function SettingsView() {
                 <div>
                   <p className="text-sm font-medium text-foreground">Admin Notification Emails</p>
                   <ul className="mt-2 space-y-1">
-                    {MASTER_ADMINS.map((email) => (
+                    {MASTER_ADMIN_EMAILS.map((email) => (
                       <li key={email} className="text-xs text-muted-foreground flex items-center gap-1.5">
                         <span className="h-1 w-1 rounded-full bg-primary" />
                         {email}

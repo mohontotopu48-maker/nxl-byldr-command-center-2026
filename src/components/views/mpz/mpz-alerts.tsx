@@ -23,8 +23,8 @@ export function MpzAlerts({ onSelectLead }: MpzAlertsProps) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/mpz/leads').then(r => r.json()),
-      fetch('/api/mpz/tasks').then(r => r.json()),
+      fetch('/api/mpz/leads').then(r => r.ok ? r.json() : []),
+      fetch('/api/mpz/tasks').then(r => r.ok ? r.json() : []),
     ])
       .then(([l, t]) => { setLeads(l); setTasks(t) })
       .catch(() => {})

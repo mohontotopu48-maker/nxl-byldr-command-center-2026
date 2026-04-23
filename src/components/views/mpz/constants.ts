@@ -52,8 +52,9 @@ export function getStageBgClass(key: string): string {
 }
 
 export function getTimeAgo(dateStr: string): string {
-  const now = new Date()
   const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return 'Unknown'
+  const now = new Date()
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
   if (seconds < 60) return 'Just now'
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`

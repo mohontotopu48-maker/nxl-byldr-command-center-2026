@@ -42,10 +42,14 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage }),
       })
-      const updated = await res.json()
-      setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, stage: newStage, updatedAt: updated.updatedAt } : l))
+      if (res.ok) {
+        const updated = await res.json()
+        setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, stage: newStage, updatedAt: updated.updatedAt } : l))
+      } else {
+        toast.error('Failed to move lead')
+      }
     } catch {
-      // ignore
+      toast.error('Failed to move lead')
     } finally {
       setMovingLead(null)
     }

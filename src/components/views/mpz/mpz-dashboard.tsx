@@ -27,8 +27,17 @@ export function MpzDashboard({ onSelectLead, onTabChange }: MpzDashboardProps) {
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch('/api/mpz/dashboard')
-      const data = await res.json()
-      setStats(data)
+      if (res.ok) {
+        const data = await res.json()
+        setStats(data)
+      } else {
+        setStats({
+          totalLeads: 0, newLeads: 0, hotLeads: 0,
+          leadsByStage: {}, pendingTasks: 0, urgentTasks: 0,
+          activeAutomations: 0, stuckLeads: [], recentActivities: [],
+          conversionRate: 0,
+        })
+      }
     } catch {
       setStats({
         totalLeads: 0, newLeads: 0, hotLeads: 0,

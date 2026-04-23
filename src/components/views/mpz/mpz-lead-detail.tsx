@@ -41,8 +41,8 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
     if (open && lead) {
       setLoading(true)
       fetch(`/api/mpz/leads/${lead.id}`)
-        .then(r => r.json())
-        .then(setDetailLead)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => setDetailLead(data ?? lead))
         .catch(() => setDetailLead(lead))
         .finally(() => setLoading(false))
     } else if (!open) {
@@ -63,10 +63,14 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage }),
       })
-      const updated = await res.json()
-      setDetailLead(updated)
-      onUpdated?.()
-      toast.success(`Stage updated to "${getStageLabel(newStage)}"`)
+      if (res.ok) {
+        const updated = await res.json()
+        setDetailLead(updated)
+        onUpdated?.()
+        toast.success(`Stage updated to "${getStageLabel(newStage)}"`)
+      } else {
+        toast.error('Failed to update stage')
+      }
     } catch {
       toast.error('Failed to update stage')
     } finally {
@@ -79,10 +83,14 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
     setMockupLoading(true)
     try {
       const res = await fetch(`/api/mpz/leads/${currentLead.id}/mockup-ready`, { method: 'PUT' })
-      const updated = await res.json()
-      setDetailLead(updated)
-      onUpdated?.()
-      toast.success('Mockup marked as ready! 🎨')
+      if (res.ok) {
+        const updated = await res.json()
+        setDetailLead(updated)
+        onUpdated?.()
+        toast.success('Mockup marked as ready! 🎨')
+      } else {
+        toast.error('Failed to mark mockup ready')
+      }
     } catch {
       toast.error('Failed to mark mockup ready')
     } finally {

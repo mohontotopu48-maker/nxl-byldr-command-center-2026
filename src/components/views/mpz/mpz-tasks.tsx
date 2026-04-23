@@ -20,7 +20,7 @@ export function MpzTasks() {
 
   useEffect(() => {
     fetch('/api/mpz/tasks')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : [])
       .then(setTasks)
       .catch(() => setTasks([]))
       .finally(() => setLoading(false))
@@ -28,9 +28,13 @@ export function MpzTasks() {
 
   const handleComplete = async (taskId: string) => {
     try {
-      await fetch(`/api/mpz/tasks/${taskId}/complete`, { method: 'PUT' })
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t))
-      toast.success('Task completed! 🎉')
+      const res = await fetch(`/api/mpz/tasks/${taskId}/complete`, { method: 'PUT' })
+      if (res.ok) {
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t))
+        toast.success('Task completed! 🎉')
+      } else {
+        toast.error('Failed to complete task')
+      }
     } catch {
       toast.error('Failed to complete task')
     }
@@ -38,9 +42,13 @@ export function MpzTasks() {
 
   const handleDelete = async (taskId: string) => {
     try {
-      await fetch(`/api/mpz/tasks/${taskId}`, { method: 'DELETE' })
-      setTasks(prev => prev.filter(t => t.id !== taskId))
-      toast.success('Task deleted')
+      const res = await fetch(`/api/mpz/tasks/${taskId}`, { method: 'DELETE' })
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => t.id !== taskId))
+        toast.success('Task deleted')
+      } else {
+        toast.error('Failed to delete task')
+      }
     } catch {
       toast.error('Failed to delete task')
     }

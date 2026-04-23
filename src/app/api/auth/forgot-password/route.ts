@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log(`[OTP] Password reset OTP for ${normalizedEmail}: ${otp}`)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[OTP] Password reset OTP for ${normalizedEmail}: ${otp}`)
+    }
 
     return NextResponse.json({
       success: true,

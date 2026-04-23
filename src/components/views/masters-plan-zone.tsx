@@ -141,7 +141,7 @@ export function MastersPlanZone() {
             <MpzLeads onSelectLead={handleSelectLead} refreshTrigger={refreshTrigger} />
           )}
           {activeTab === 'tasks' && (
-            <MpzTasks />
+            <MpzTasks key={refreshTrigger} />
           )}
           {activeTab === 'automation' && (
             <MpzAutomation />

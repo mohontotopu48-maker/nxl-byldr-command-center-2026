@@ -40,17 +40,21 @@ export function MpzNewLead({ open, onClose, onCreated }: MpzNewLeadProps) {
     }
     setLoading(true)
     try {
-      await fetch('/api/mpz/leads', {
+      const res = await fetch('/api/mpz/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      toast.success('Lead created successfully!', {
-        description: `${form.name} from ${form.businessName} has been added.`,
-      })
-      resetForm()
-      onCreated?.()
-      onClose()
+      if (res.ok) {
+        toast.success('Lead created successfully!', {
+          description: `${form.name} from ${form.businessName} has been added.`,
+        })
+        resetForm()
+        onCreated?.()
+        onClose()
+      } else {
+        toast.error('Failed to create lead')
+      }
     } catch {
       toast.error('Failed to create lead')
     } finally {

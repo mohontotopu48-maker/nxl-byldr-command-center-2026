@@ -39,6 +39,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -153,19 +163,24 @@ export function CustomersView() {
     }
   }
 
-  const handleDeleteCustomer = async (id: string, name: string) => {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const confirmDeleteCustomer = async () => {
+    if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/customers/${id}`, {
+      const res = await fetch(`/api/customers/${deleteTarget.id}`, {
         method: 'DELETE',
       })
       if (res.ok) {
-        toast.success(`${name} removed`)
+        toast.success(`${deleteTarget.name} removed`)
         fetchCustomers()
       } else {
         toast.error('Failed to remove customer')
       }
     } catch {
       toast.error('Failed to remove customer')
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -201,6 +216,7 @@ export function CustomersView() {
   }
 
   return (
+    <>
     <motion.div
       variants={containerVariants}
       initial="hidden"
@@ -394,7 +410,7 @@ export function CustomersView() {
                         <DropdownMenuItem className="text-foreground focus:bg-accent cursor-pointer">Edit</DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                          onClick={() => handleDeleteCustomer(customer.id, customer.name)}
+                          onClick={() => setDeleteTarget({ id: customer.id, name: customer.name })}
                         >
                           Remove
                         </DropdownMenuItem>
@@ -459,5 +475,21 @@ export function CustomersView() {
         )}
       </div>
     </motion.div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Remove Customer</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to remove &quot;{deleteTarget?.name}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-background border-border text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCustomer} className="bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

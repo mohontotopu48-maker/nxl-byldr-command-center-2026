@@ -4,7 +4,18 @@ import { db } from '@/lib/db'
 export async function GET() {
   try {
     const members = await db.teamMember.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        status: true,
+        phone: true,
+        location: true,
+        bio: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: { tasks: true },
         },

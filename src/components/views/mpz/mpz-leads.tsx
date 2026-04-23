@@ -41,8 +41,12 @@ export function MpzLeads({ onSelectLead, refreshTrigger }: MpzLeadsProps) {
     setLoading(true)
     try {
       const r = await fetch('/api/mpz/leads')
-      const data = await r.json()
-      setLeads(data)
+      if (r.ok) {
+        const data = await r.json()
+        setLeads(data)
+      } else {
+        setLeads([])
+      }
     } catch {
       setLeads([])
     } finally {

@@ -40,6 +40,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -168,19 +178,24 @@ export function TeamView() {
     }
   }
 
-  const handleDeleteMember = async (id: string, name: string) => {
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const confirmDeleteMember = async () => {
+    if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/team/${id}`, {
+      const res = await fetch(`/api/team/${deleteTarget.id}`, {
         method: 'DELETE',
       })
       if (res.ok) {
-        toast.success(`${name} removed`)
+        toast.success(`${deleteTarget.name} removed`)
         fetchMembers()
       } else {
         toast.error('Failed to remove member')
       }
     } catch {
       toast.error('Failed to remove member')
+    } finally {
+      setDeleteTarget(null)
     }
   }
 
@@ -239,6 +254,7 @@ export function TeamView() {
   }
 
   return (
+    <>
     <motion.div
       variants={containerVariants}
       initial="hidden"
@@ -419,7 +435,7 @@ export function TeamView() {
                         <DropdownMenuItem className="text-foreground focus:bg-accent cursor-pointer">Edit Role</DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                          onClick={() => handleDeleteMember(member.id, member.name)}
+                          onClick={() => setDeleteTarget({ id: member.id, name: member.name })}
                         >
                           Remove
                         </DropdownMenuItem>
@@ -483,5 +499,21 @@ export function TeamView() {
         )}
       </div>
     </motion.div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to remove &quot;{deleteTarget?.name}&quot; from the team? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-background border-border text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteMember} className="bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
