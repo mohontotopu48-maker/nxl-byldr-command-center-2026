@@ -1,6 +1,6 @@
 {
   "name": "nxl-byldr-command-center",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
@@ -10,7 +10,15 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:deploy": "opennextjs-cloudflare deploy",
+    "cf:dev": "opennextjs-cloudflare dev",
+    "deploy": "bash scripts/deploy-cloudflare.sh",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:deploy": "opennextjs-cloudflare deploy",
+    "cf:dev": "opennextjs-cloudflare dev",
+    "deploy": "bash scripts/deploy-cloudflare.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

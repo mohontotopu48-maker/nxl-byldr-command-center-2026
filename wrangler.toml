@@ -1,19 +1,14 @@
 name = "nxl-byldr-command-center"
 compatibility_date = "2025-04-23"
 compatibility_flags = ["nodejs_compat"]
+account_id = "227aba79b1a9b3b80e8dd6d6f970a9ac"
 
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "nxl-byldr-db"
-database_id = "YOUR_D1_DATABASE_ID"  # Replace after running: wrangler d1 create nxl-byldr-db
+database_id = "PLACEHOLDER"  # Will be replaced by deploy script
 
-# Environment variables
+# Environment variables (secrets should be set via: wrangler secret put NEXTAUTH_SECRET)
 [vars]
-NEXTAUTH_SECRET = "vsual-business-os-secret-key-2025"
 NEXTAUTH_URL = "https://nxl-byldr-command-center.pages.dev"
-DATABASE_URL = "file:./db/custom.db"
-
-# Production environment overrides
-[env.production]
-name = "nxl-byldr-command-center"
