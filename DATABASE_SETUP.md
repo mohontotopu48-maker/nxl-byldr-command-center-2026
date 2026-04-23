@@ -4,6 +4,11 @@
 #
 # This project uses Neon PostgreSQL for production and SQLite for local dev.
 #
+# ═══ STATUS: LIVE ═══
+# Neon PostgreSQL: ep-bold-mode-anuusxdu (connected & seeded)
+# Vercel: my-project-ruddy-psi.vercel.app
+# Database tables: TeamMember, Project, Task, Customer, SetupStep, AlertBar, Metric, etc.
+#
 # ═══ NEON DATABASE SETUP (Production - Vercel) ═══
 #
 # 1. Go to https://console.neon.tech/app/projects
