@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,8 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if it's a master admin email
-    const MASTER_ADMINS = ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com']
-    const isMasterAdmin = MASTER_ADMINS.includes(normalizedEmail)
+    const isMasterAdmin = MASTER_ADMIN_EMAILS.includes(normalizedEmail as typeof MASTER_ADMIN_EMAILS[number])
     const role = isMasterAdmin ? 'master_admin' : 'member'
 
     const user = await db.teamMember.create({

@@ -15,12 +15,3 @@ export const MASTER_ADMIN_EMAILS = [
   "info.vsualdm@gmail.com",
   "geovsualdm@gmail.com",
 ] as const;
-
-export const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: "LayoutDashboard" },
-  { id: "projects", label: "Projects", icon: "FolderKanban" },
-  { id: "team", label: "Team", icon: "Users" },
-  { id: "customers", label: "Customers", icon: "UserCheck" },
-  { id: "analytics", label: "Analytics", icon: "BarChart3" },
-  { id: "settings", label: "Settings", icon: "Settings" },
-] as const;

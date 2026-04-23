@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
-const MASTER_ADMINS = ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com']
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     // Determine role
-    const role = user.role === 'master_admin' || MASTER_ADMINS.includes(user.email)
+    const role = user.role === 'master_admin' || MASTER_ADMIN_EMAILS.includes(user.email as typeof MASTER_ADMIN_EMAILS[number])
       ? 'master_admin'
       : user.role
 

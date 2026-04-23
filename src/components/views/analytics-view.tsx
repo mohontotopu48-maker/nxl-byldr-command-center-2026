@@ -129,8 +129,8 @@ export function AnalyticsView() {
       change: '+18 this week',
       trend: 'up' as const,
       icon: Activity,
-      color: 'text-blue-400',
-      bg: 'bg-blue-400/10',
+      color: 'text-primary',
+      bg: 'bg-primary/10',
     },
     {
       label: 'Team Members',
@@ -138,8 +138,8 @@ export function AnalyticsView() {
       change: '+2 joined',
       trend: 'up' as const,
       icon: Users,
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10',
+      color: 'text-rose-400',
+      bg: 'bg-rose-400/10',
     },
     {
       label: 'Customers',
@@ -174,8 +174,8 @@ export function AnalyticsView() {
       change: '+8.2%',
       trend: 'up' as const,
       icon: Eye,
-      color: 'text-blue-400',
-      bg: 'bg-blue-400/10',
+      color: 'text-primary',
+      bg: 'bg-primary/10',
     },
     {
       label: 'Growth Rate',
@@ -183,8 +183,8 @@ export function AnalyticsView() {
       change: '+3.1%',
       trend: 'up' as const,
       icon: TrendingUp,
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10',
+      color: 'text-rose-400',
+      bg: 'bg-rose-400/10',
     },
   ]
 
@@ -269,8 +269,8 @@ export function AnalyticsView() {
                         <stop offset="95%" stopColor="#FF0099" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="usersGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#FF0099" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#FF0099" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" />
@@ -298,7 +298,7 @@ export function AnalyticsView() {
                     <Area
                       type="monotone"
                       dataKey="users"
-                      stroke="#3B82F6"
+                      stroke="#FF0099"
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#usersGradient)"
@@ -346,7 +346,7 @@ export function AnalyticsView() {
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="tasks" fill="#FF0099" radius={[4, 4, 0, 0]} name="Tasks" />
-                    <Bar dataKey="meetings" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Meetings" />
+                    <Bar dataKey="meetings" fill="#FF0099" radius={[4, 4, 0, 0]} name="Meetings" />
                     <Bar dataKey="reviews" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Reviews" />
                   </BarChart>
                 </ResponsiveContainer>

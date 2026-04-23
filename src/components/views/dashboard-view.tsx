@@ -15,7 +15,6 @@ import {
   Sparkles,
   Zap,
   ChevronRight,
-  ChevronDown,
   Mail,
   Building2,
   Eye,
@@ -400,11 +399,7 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
 
       {/* ═══ HOW TO USE ═══ */}
       <motion.div variants={itemVariants} className="flex justify-center">
-        <Button variant="ghost" onClick={() => {/* HowToUseDialog handles its own state */}}
-          className="gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 border border-border/50 text-sm">
-          <Info className="h-3.5 w-3.5" />
-          How to use this Command Center
-        </Button>
+        <HowToUseDialog />
       </motion.div>
 
       {/* ═══ EDIT GLOBAL ALERT DIALOG ═══ */}

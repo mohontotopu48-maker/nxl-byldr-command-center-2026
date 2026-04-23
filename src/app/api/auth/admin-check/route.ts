@@ -1,8 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-
-const MASTER_ADMIN_EMAILS = ['info.vsualdm@gmail.com', 'geovsualdm@gmail.com']
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export async function GET() {
   try {
@@ -13,7 +12,7 @@ export async function GET() {
 
     const email = (session.user as any).email?.toLowerCase()
     const role = (session.user as any).role
-    const isMasterAdmin = MASTER_ADMIN_EMAILS.includes(email) || role === 'master_admin'
+    const isMasterAdmin = MASTER_ADMIN_EMAILS.includes(email as typeof MASTER_ADMIN_EMAILS[number]) || role === 'master_admin'
 
     return NextResponse.json({
       isAdmin: isMasterAdmin,

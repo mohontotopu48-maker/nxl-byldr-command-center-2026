@@ -79,7 +79,7 @@ const statusStyles: Record<CustomerStatus, string> = {
 
 const planStyles: Record<CustomerPlan, string> = {
   free: 'bg-muted text-muted-foreground',
-  pro: 'bg-blue-400/15 text-blue-400',
+  pro: 'bg-primary/15 text-primary',
   enterprise: 'bg-purple-400/15 text-purple-400',
 }
 

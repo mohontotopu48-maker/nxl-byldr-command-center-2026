@@ -87,7 +87,7 @@ type PriorityKey = 'High' | 'Medium' | 'Low' | 'Critical'
 const statusStyles: Record<StatusKey, string> = {
   Active: 'bg-primary/15 text-primary border-primary/20',
   Paused: 'bg-amber-400/15 text-amber-400 border-amber-400/20',
-  Completed: 'bg-blue-400/15 text-blue-400 border-blue-400/20',
+  Completed: 'bg-primary/15 text-primary border-primary/20',
   Archived: 'bg-muted text-muted-foreground border-border',
 }
 

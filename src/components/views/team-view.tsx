@@ -215,9 +215,9 @@ export function TeamView() {
   }
 
   const avatarColors = [
-    'bg-primary/20', 'bg-blue-400/20', 'bg-purple-400/20',
-    'bg-amber-400/20', 'bg-rose-400/20', 'bg-teal-400/20',
-    'bg-indigo-400/20', 'bg-cyan-400/20',
+    'bg-primary/20', 'bg-rose-400/20', 'bg-purple-400/20',
+    'bg-amber-400/20', 'bg-teal-400/20', 'bg-cyan-400/20',
+    'bg-pink-400/20', 'bg-orange-400/20',
   ]
 
   const getColor = (id: string) => {
