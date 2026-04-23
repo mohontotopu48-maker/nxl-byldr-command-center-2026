@@ -170,7 +170,7 @@ export function MpzTasks() {
   return (
     <div className="p-4 md:p-6 h-[calc(100vh-10rem)]">
       <div className="grid gap-4 h-full lg:grid-cols-2">
-        {renderColumn('Sal', salTasks, 'bg-emerald-500')}
+        {renderColumn('Sal', salTasks, 'bg-pink-500')}
         {renderColumn('Geo', geoTasks, 'bg-amber-500')}
       </div>
     </div>

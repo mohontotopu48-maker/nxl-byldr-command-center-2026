@@ -133,7 +133,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
                                 {lead.serviceType}
                               </Badge>
                               {lead.mockupReady && (
-                                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+                                <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/20 text-[10px]">
                                   Mockup
                                 </Badge>
                               )}

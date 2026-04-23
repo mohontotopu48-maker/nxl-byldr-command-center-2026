@@ -270,7 +270,7 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {currentLead.mockupReady ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        <CheckCircle2 className="h-5 w-5 text-pink-500" />
                       ) : (
                         <Clock className="h-5 w-5 text-muted-foreground" />
                       )}
@@ -302,7 +302,7 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
                         <div key={task.id} className="flex items-center gap-2 rounded-lg border p-2.5">
                           <div className={cn(
                             'h-2 w-2 rounded-full',
-                            task.status === 'completed' ? 'bg-emerald-500' : 'bg-muted-foreground'
+                            task.status === 'completed' ? 'bg-pink-500' : 'bg-muted-foreground'
                           )} />
                           <div className="flex-1 min-w-0">
                             <p className={cn('text-sm', task.status === 'completed' && 'line-through text-muted-foreground')}>

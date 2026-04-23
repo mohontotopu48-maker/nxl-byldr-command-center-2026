@@ -265,8 +265,8 @@ export function AnalyticsView() {
                   <AreaChart data={revenueData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00E87B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#00E87B" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#FF0099" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#FF0099" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="usersGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
@@ -289,7 +289,7 @@ export function AnalyticsView() {
                     <Area
                       type="monotone"
                       dataKey="revenue"
-                      stroke="#00E87B"
+                      stroke="#FF0099"
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#revenueGradient)"
@@ -345,7 +345,7 @@ export function AnalyticsView() {
                       tickLine={false}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="tasks" fill="#00E87B" radius={[4, 4, 0, 0]} name="Tasks" />
+                    <Bar dataKey="tasks" fill="#FF0099" radius={[4, 4, 0, 0]} name="Tasks" />
                     <Bar dataKey="meetings" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Meetings" />
                     <Bar dataKey="reviews" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Reviews" />
                   </BarChart>

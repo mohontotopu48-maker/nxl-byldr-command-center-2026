@@ -95,7 +95,7 @@ export function MpzAutomation() {
                             <Badge variant="secondary" className="text-[10px]">
                               {leadsAtDay} leads here
                             </Badge>
-                            <Badge className="bg-emerald-500/10 text-emerald-600 text-[10px]">
+                            <Badge className="bg-pink-500/10 text-pink-600 text-[10px]">
                               {completedLeads} moved on
                             </Badge>
                           </div>

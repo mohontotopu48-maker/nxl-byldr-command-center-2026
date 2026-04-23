@@ -6,10 +6,10 @@ export const PIPELINE_STAGES = [
   { key: 'mockup_sent', label: 'Mockup Sent', color: '#eab308', bgClass: 'bg-yellow-500' },
   { key: 'engaged', label: 'Engaged', color: '#06b6d4', bgClass: 'bg-cyan-500' },
   { key: 'video_sent', label: 'Video Sent', color: '#14b8a6', bgClass: 'bg-teal-500' },
-  { key: 'proof_stage', label: 'Proof Stage', color: '#10b981', bgClass: 'bg-emerald-500' },
+  { key: 'proof_stage', label: 'Proof Stage', color: '#ec4899', bgClass: 'bg-pink-500' },
   { key: 'hot_lead', label: 'Hot Lead', color: '#ef4444', bgClass: 'bg-red-500' },
   { key: 'call_scheduled', label: 'Call Scheduled', color: '#f59e0b', bgClass: 'bg-amber-500' },
-  { key: 'closed_won', label: 'Closed Won', color: '#22c55e', bgClass: 'bg-green-500' },
+  { key: 'closed_won', label: 'Closed Won', color: '#d946ef', bgClass: 'bg-fuchsia-500' },
   { key: 'closed_lost', label: 'Closed Lost', color: '#64748b', bgClass: 'bg-slate-500' },
   { key: 'retention', label: 'Retention', color: '#a855f7', bgClass: 'bg-purple-500' },
 ] as const
@@ -40,7 +40,7 @@ export const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'bg-red-500 text-white',
   high: 'bg-orange-500 text-white',
   medium: 'bg-yellow-500 text-black',
-  low: 'bg-green-500 text-white',
+  low: 'bg-pink-500 text-white',
 }
 
 export function getStageLabel(key: string): string {

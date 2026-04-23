@@ -231,7 +231,7 @@ export function MpzAlerts({ onSelectLead }: MpzAlertsProps) {
                 <p className="text-xs text-muted-foreground">Overdue Tasks</p>
               </div>
               <div className="rounded-lg border p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-500">
+                <p className="text-2xl font-bold text-pink-500">
                   {tasks.filter(t => t.status === 'completed').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Completed Tasks</p>
@@ -244,7 +244,7 @@ export function MpzAlerts({ onSelectLead }: MpzAlertsProps) {
       {/* Empty State */}
       {hotLeads.length === 0 && stuckLeads.length === 0 && overdueTasks.length === 0 && urgentTasks.length === 0 && (
         <div className="text-center py-16">
-          <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+          <CheckCircle2 className="h-16 w-16 text-pink-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold">All Clear! 🎉</h3>
           <p className="text-muted-foreground mt-1">No alerts right now. Everything is running smoothly.</p>
         </div>

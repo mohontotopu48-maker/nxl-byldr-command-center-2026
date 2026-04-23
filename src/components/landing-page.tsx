@@ -179,18 +179,18 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
       {/* Background layers */}
       <div className="animate-mesh absolute inset-0 opacity-40"
-        style={{ background: 'linear-gradient(125deg, #0B0B0F 0%, #0a1628 25%, #0B0B0F 50%, #0d1a12 75%, #0B0B0F 100%)' }} />
+        style={{ background: 'linear-gradient(125deg, #0B0B0F 0%, #1a0a14 25%, #0B0B0F 50%, #140a1a 75%, #0B0B0F 100%)' }} />
       <div className="absolute inset-0 animate-grid-pulse"
         style={{
-          backgroundImage: 'linear-gradient(rgba(0,232,123,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,232,123,0.04) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(255,0,153,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,153,0.04) 1px, transparent 1px)',
           backgroundSize: '60px 60px',
         }} />
       <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full animate-orb-1 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(0,232,123,0.08) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, rgba(255,0,153,0.08) 0%, transparent 70%)' }} />
       <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full animate-orb-2 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(0,232,123,0.06) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, rgba(255,0,153,0.06) 0%, transparent 70%)' }} />
       <div className="absolute inset-x-0 h-px animate-scan-line pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,232,123,0.15) 50%, transparent 100%)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,0,153,0.15) 50%, transparent 100%)' }} />
 
       {/* Main Content */}
       <motion.div
@@ -236,7 +236,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         {/* Login Card */}
         <motion.div variants={scaleIn} className="w-full max-w-md">
           <div className="relative rounded-2xl border border-white/[0.06] bg-[#14141A]/80 backdrop-blur-2xl shadow-2xl shadow-black/50 animate-glow-ring overflow-hidden">
-            <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,232,123,0.4), transparent)' }} />
+            <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,0,153,0.4), transparent)' }} />
             <div className="p-6 sm:p-8">
 
               <div className="text-center mb-6">

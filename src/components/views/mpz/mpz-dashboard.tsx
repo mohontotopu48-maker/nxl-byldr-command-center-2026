@@ -62,7 +62,7 @@ export function MpzDashboard({ onSelectLead, onTabChange }: MpzDashboardProps) {
     }))
 
   const kpiCards = [
-    { title: 'Total Leads', value: stats?.totalLeads ?? 0, icon: Users, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+    { title: 'Total Leads', value: stats?.totalLeads ?? 0, icon: Users, color: 'text-pink-500', bgColor: 'bg-pink-500/10' },
     { title: 'Hot Leads', value: stats?.hotLeads ?? 0, icon: Flame, color: 'text-red-500', bgColor: 'bg-red-500/10' },
     { title: 'Active Automations', value: stats?.activeAutomations ?? 0, icon: Zap, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
     { title: 'Conversion Rate', value: stats?.conversionRate != null ? `${Math.round(stats.conversionRate * 100)}%` : '—', icon: TrendingUp, color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
