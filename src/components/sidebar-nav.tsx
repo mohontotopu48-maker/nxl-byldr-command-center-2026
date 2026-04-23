@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -31,7 +32,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 
-export type NavView = 'dashboard' | 'projects' | 'team' | 'customers' | 'client-journey' | 'analytics' | 'settings' | 'masters-plan'
+export type NavView = 'dashboard' | 'projects' | 'team' | 'customers' | 'client-journey' | 'messages' | 'analytics' | 'settings' | 'masters-plan'
 
 interface SidebarNavProps {
   activeView: NavView
@@ -47,6 +48,7 @@ const navItems: { id: NavView; label: string; icon: React.ElementType; special?:
   { id: 'team', label: 'Team', icon: Users },
   { id: 'customers', label: 'Customers', icon: UserCheck },
   { id: 'client-journey', label: 'Client Journey', icon: Route },
+  { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'masters-plan', label: 'Masters Plan Zone', icon: Zap, special: true },
   { id: 'settings', label: 'Settings', icon: Settings },

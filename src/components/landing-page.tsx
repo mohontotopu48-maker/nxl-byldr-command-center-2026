@@ -15,6 +15,7 @@ import {
   Globe,
   Zap,
   Info,
+  UserCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +33,7 @@ import { toast } from 'sonner'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 interface LandingPageProps {
-  onLogin: (userData?: { name: string; email: string; role: string }) => void
+  onLogin: (userData?: { name: string; email: string; role: string; portalType: string }) => void
 }
 
 const cubicEase: [number, number, number, number] = [0.22, 1, 0.36, 1]
@@ -54,6 +55,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loginMode, setLoginMode] = useState<'admin' | 'customer'>('admin')
 
   // OAuth
   const [oauthDialogOpen, setOauthDialogOpen] = useState(false)
@@ -91,10 +93,11 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       if (res.ok) {
         const data = await res.json().catch(() => null)
         const role = MASTER_ADMIN_EMAILS.includes(email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : (data?.user?.role || 'member')
-        const authData = { name: data?.user?.name || email.split('@')[0], email, role, loggedIn: true }
+        const portalType = loginMode
+        const authData = { name: data?.user?.name || email.split('@')[0], email, role, portalType, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
-        toast.success('Welcome to VSUAL NXL BYLDR Command Center!')
-        onLogin({ name: authData.name, email, role })
+        toast.success(portalType === 'customer' ? 'Welcome to your Customer Portal!' : 'Welcome to VSUAL NXL BYLDR Command Center!')
+        onLogin({ name: authData.name, email, role, portalType })
       } else {
         const data = await res.json().catch(() => ({}))
         setError(data?.error || data?.message || 'Invalid credentials.')
@@ -124,11 +127,12 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       if (res.ok) {
         const data = await res.json()
         const role = MASTER_ADMIN_EMAILS.includes(oauthEmail.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : 'member'
-        const authData = { name: data.name || oauthEmail.split('@')[0], email: data.email || oauthEmail, role, loggedIn: true }
+        const portalType = loginMode
+        const authData = { name: data.name || oauthEmail.split('@')[0], email: data.email || oauthEmail, role, portalType, loggedIn: true }
         localStorage.setItem('vsual_auth', JSON.stringify(authData))
-        toast.success('Welcome to VSUAL NXL BYLDR Command Center!')
+        toast.success(portalType === 'customer' ? 'Welcome to your Customer Portal!' : 'Welcome to VSUAL NXL BYLDR Command Center!')
         setOauthDialogOpen(false)
-        onLogin({ name: authData.name, email: authData.email, role: authData.role })
+        onLogin({ name: authData.name, email: authData.email, role: authData.role, portalType })
       } else {
         const data = await res.json().catch(() => ({}))
         toast.error(data?.error || 'Failed to sign in.')
@@ -229,13 +233,32 @@ export function LandingPage({ onLogin }: LandingPageProps) {
           </p>
         </motion.div>
 
-        {/* How to use button */}
+        {/* ═══ LOGIN MODE TOGGLE ═══ */}
         <motion.div variants={fadeUp} className="mb-6">
-          <Button variant="ghost" onClick={() => setHowToOpen(true)}
-            className="gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 border border-border/50">
-            <Info className="h-3.5 w-3.5" />
-            How to use this Command Center
-          </Button>
+          <div className="flex items-center gap-2 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+            <button
+              onClick={() => setLoginMode('admin')}
+              className={`flex items-center gap-2 flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+                loginMode === 'admin'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Admin Login</span>
+            </button>
+            <button
+              onClick={() => setLoginMode('customer')}
+              className={`flex items-center gap-2 flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+                loginMode === 'customer'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <UserCheck className="h-4 w-4" />
+              <span>Customer Portal</span>
+            </button>
+          </div>
         </motion.div>
 
         {/* Login Card */}
@@ -246,11 +269,17 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
               <div className="text-center mb-6">
                 <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 mb-3">
-                  <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                  {loginMode === 'admin' ? <ShieldCheck className="h-3.5 w-3.5 text-primary" /> : <UserCheck className="h-3.5 w-3.5 text-primary" />}
                   <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">Secure Login</span>
                 </div>
-                <h2 className="text-lg font-bold text-foreground">Sign In</h2>
-                <p className="text-xs text-muted-foreground mt-1">Access your VSUAL NXL BYLDR Command Center</p>
+                <h2 className="text-lg font-bold text-foreground">
+                  {loginMode === 'admin' ? 'Admin Sign In' : 'Customer Sign In'}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {loginMode === 'admin'
+                    ? 'Access your VSUAL NXL BYLDR Command Center'
+                    : 'Access your project journey & contact Sal & Geo'}
+                </p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">

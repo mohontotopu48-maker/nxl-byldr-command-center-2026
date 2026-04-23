@@ -29,6 +29,7 @@ const viewTitles: Record<NavView, string> = {
   team: 'Team',
   customers: 'Customers',
   'client-journey': 'Client Journey',
+  messages: 'Messages',
   analytics: 'Analytics',
   settings: 'Settings',
   'masters-plan': 'Masters Plan Zone',

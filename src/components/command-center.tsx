@@ -11,6 +11,7 @@ import { CustomersView } from '@/components/views/customers-view'
 import { AnalyticsView } from '@/components/views/analytics-view'
 import { SettingsView } from '@/components/views/settings-view'
 import { MastersPlanZone } from '@/components/views/masters-plan-zone'
+import { MessagesView } from '@/components/views/messages-view'
 import { AiChat } from '@/components/ai-chat'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
@@ -21,6 +22,7 @@ const viewComponents: Record<NavView, React.ComponentType> = {
   team: TeamView,
   customers: CustomersView,
   'client-journey': ClientJourneyView,
+  messages: MessagesView,
   analytics: AnalyticsView,
   'masters-plan': MastersPlanZone,
   settings: SettingsView,

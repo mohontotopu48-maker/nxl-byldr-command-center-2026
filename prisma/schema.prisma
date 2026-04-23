@@ -215,3 +215,22 @@ model MpzActivity {
   createdAt DateTime @default(now())
   lead      MpzLead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Customer Portal & Contact Models                                */
+/* ═══════════════════════════════════════════════════════════════ */
+
+model ContactMessage {
+  id          String   @id @default(cuid())
+  customerName String
+  customerEmail String
+  subject     String
+  message     String
+  priority    String   @default("normal")
+  status      String   @default("unread")
+  assignedTo  String   @default("both")
+  reply       String?
+  repliedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
