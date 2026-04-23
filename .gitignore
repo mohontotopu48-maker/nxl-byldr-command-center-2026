@@ -1,0 +1,76 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+
+# next.js
+.next/
+out/
+
+# production
+build/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma
+db/*.db-journal
+db/*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# logs
+*.log
+dev.log
+server.log
+.zscripts/dev.pid
+
+# mini-services
+mini-services/node_modules/
+
+# screenshots
+screenshot*.png
+*.png
+!public/**/*.png
+
+# sandbox-specific
+.zscripts/
+Caddyfile
+auto-sync.log
+worklog.md
+upload/
+download/
+
+# AI skills (not part of project)
+skills/
+
+# examples
+examples/

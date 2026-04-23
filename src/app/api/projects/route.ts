@@ -1,0 +1,72 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+
+export async function GET() {
+  try {
+    const projects = await db.project.findMany({
+      include: {
+        _count: {
+          select: { tasks: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return NextResponse.json(projects)
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch projects' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { name, description, status, priority, startDate, endDate } = body
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Project name is required' },
+        { status: 400 }
+      )
+    }
+
+    const validStatuses = ['active', 'paused', 'completed', 'archived']
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    const validPriorities = ['low', 'medium', 'high', 'critical']
+    if (priority && !validPriorities.includes(priority)) {
+      return NextResponse.json(
+        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    const project = await db.project.create({
+      data: {
+        name: name.trim(),
+        description: description ?? null,
+        status: status ?? 'active',
+        priority: priority ?? 'medium',
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+      },
+    })
+
+    return NextResponse.json(project, { status: 201 })
+  } catch (error) {
+    console.error('Error creating project:', error)
+    return NextResponse.json(
+      { error: 'Failed to create project' },
+      { status: 500 }
+    )
+  }
+}

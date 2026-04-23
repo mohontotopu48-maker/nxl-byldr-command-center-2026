@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("active") // active, paused, completed, archived
+  priority    String   @default("medium") // low, medium, high, critical
+  progress    Int      @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       Task[]
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("todo") // todo, in_progress, review, done
+  priority    String   @default("medium")
+  projectId   String
+  assigneeId  String?
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    TeamMember? @relation(fields: [assigneeId], references: [id])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String   @default("")
+  role      String   @default("member") // admin, manager, member, master_admin
+  avatar    String?
+  status    String   @default("active")
+  phone     String?
+  location  String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  type      String   // project_created, task_completed, member_joined, etc.
+  message   String
+  userId    String?
+  metadata  String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+}
+
+model Metric {
+  id         String   @id @default(cuid())
+  name       String
+  value      Float
+  unit       String?
+  category   String
+  recordedAt DateTime @default(now())
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  company   String?
+  phone     String?
+  status    String   @default("active") // active, inactive, lead
+  plan      String   @default("free")   // free, pro, enterprise
+  revenue   Float    @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  verified  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model SetupStep {
+  id          String   @id @default(cuid())
+  stepNumber  Int      @unique
+  title       String
+  description String?
+  phase       String   @default("handover") // handover, game_plan, technical, live
+  status      String   @default("pending") // completed, in_progress, pending
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AlertBar {
+  id        String   @id @default(cuid())
+  active    Boolean  @default(false)
+  message   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MpzLead {
+  id                 String   @id @default(cuid())
+  name               String
+  businessName       String
+  phone              String
+  email              String
+  serviceType        String
+  stage              String   @default("new_lead")
+  assignedTo         String   @default("Sal")
+  tags               String   @default("CA_BYLDR_LEAD")
+  mockupReady        Boolean  @default(false)
+  automationStarted  Boolean  @default(false)
+  automationDay      Int      @default(0)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  tasks              MpzTask[]
+  activities         MpzActivity[]
+}
+
+model MpzTask {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("pending")
+  priority    String    @default("medium")
+  assignedTo  String
+  leadId      String?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lead        MpzLead?  @relation(fields: [leadId], references: [id], onDelete: SetNull)
+}
+
+model MpzActivity {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  leadId    String?
+  createdAt DateTime @default(now())
+  lead      MpzLead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+}
