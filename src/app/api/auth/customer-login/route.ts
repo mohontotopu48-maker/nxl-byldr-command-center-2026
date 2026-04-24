@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { compare } from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
@@ -22,8 +23,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No customer account found with this email.' }, { status: 401 })
     }
 
-    // Check password
-    if (customer.password !== password) {
+    // Check password — support both bcrypt hash and legacy plain-text
+    if (customer.password && customer.password.length > 0) {
+      if (customer.password.startsWith('$2a$') || customer.password.startsWith('$2b$')) {
+        const isValid = await compare(password, customer.password)
+        if (!isValid) {
+          return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+        }
+      } else if (customer.password !== password) {
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+      }
+    } else {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
     }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { compare } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export async function POST(request: Request) {
@@ -19,8 +20,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
     }
 
-    // Check password
-    if (user.password !== password) {
+    // Check password — support both bcrypt hash and legacy plain-text
+    if (user.password && user.password.length > 0) {
+      if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+        const isValid = await compare(password, user.password)
+        if (!isValid) {
+          return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+        }
+      } else if (user.password !== password) {
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+      }
+    } else {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
     }
 

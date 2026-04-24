@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hash } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
@@ -36,12 +37,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A customer account with this email already exists.' }, { status: 409 })
     }
 
+    // Hash the password before storing
+    const passwordHash = await hash(password, 10)
+
     // Create the customer
     const customer = await db.customer.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
-        password,
+        password: passwordHash,
         company: company?.trim() || null,
         phone: phone?.trim() || null,
         status: 'active',

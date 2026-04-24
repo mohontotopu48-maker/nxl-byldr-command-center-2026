@@ -10,8 +10,9 @@ export async function GET() {
       return NextResponse.json({ isAdmin: false, error: 'Not authenticated' }, { status: 401 })
     }
 
-    const email = (session.user as any).email?.toLowerCase()
-    const role = (session.user as any).role
+    const user = session.user as Record<string, unknown>
+    const email = (user.email as string)?.toLowerCase()
+    const role = user.role as string
     const isMasterAdmin = MASTER_ADMIN_EMAILS.includes(email as typeof MASTER_ADMIN_EMAILS[number]) || role === 'master_admin'
 
     return NextResponse.json({

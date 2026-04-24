@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hash } from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,12 +43,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Hash the new password before storing
+    const passwordHash = await hash(newPassword, 10)
+
     await db.teamMember.update({
       where: { email: normalizedEmail },
-      data: { password: newPassword },
+      data: { password: passwordHash },
     })
-
-    console.log(`[Password Reset] Password updated for ${normalizedEmail}`)
 
     // Clean up OTP
     await db.otpCode.deleteMany({ where: { email: normalizedEmail } })

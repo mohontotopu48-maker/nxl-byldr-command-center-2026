@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   // Prisma client must be externalized for serverless environments (Vercel)
-  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg", "bcryptjs"],
   async headers() {
     return [
       {

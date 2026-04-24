@@ -1,5 +1,6 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { compare } from 'bcryptjs'
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -15,21 +16,25 @@ const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase()
         const password = credentials.password
 
-        // Master admin check
+        // Master admin check (hardcoded for reliability; password is verified via bcrypt)
         const MASTER_ADMINS = [
-          { email: 'info.vsualdm@gmail.com', password: 'VSUAL@NX$260&' },
-          { email: 'geovsualdm@gmail.com', password: 'VSUAL@NX$260&' },
+          { email: 'info.vsualdm@gmail.com', passwordHash: '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi' },
+          { email: 'geovsualdm@gmail.com', passwordHash: '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi' },
         ]
 
         for (const admin of MASTER_ADMINS) {
-          if (email === admin.email && password === admin.password) {
-            return {
-              id: `admin-${admin.email}`,
-              name: admin.email.split('@')[0],
-              email: admin.email,
-              role: 'master_admin',
-              image: null,
+          if (email === admin.email) {
+            const isValid = await compare(password, admin.passwordHash)
+            if (isValid) {
+              return {
+                id: `admin-${admin.email}`,
+                name: admin.email.split('@')[0],
+                email: admin.email,
+                role: 'master_admin',
+                image: null,
+              }
             }
+            return null
           }
         }
 
@@ -39,8 +44,15 @@ const authOptions: NextAuthOptions = {
           const user = await db.teamMember.findUnique({ where: { email } })
 
           if (user) {
-            // Verify password against stored password
-            if (user.password && user.password.length > 0 && user.password === password) {
+            // Verify password against stored password hash
+            if (user.password && user.password.length > 0) {
+              // Support both bcrypt hash and legacy plain-text passwords during migration
+              if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+                const isValid = await compare(password, user.password)
+                if (!isValid) return null
+              } else if (user.password !== password) {
+                return null
+              }
               return {
                 id: user.id,
                 name: user.name,
@@ -49,38 +61,12 @@ const authOptions: NextAuthOptions = {
                 image: user.avatar,
               }
             }
-            // Legacy fallback: if no password stored, allow any password >= 6 chars
-            if (!user.password && password.length >= 6) {
-              return {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                image: user.avatar,
-              }
-            }
+            // No password stored - reject login (must set password via admin panel)
             return null
           }
 
-          // Auto-signup: any user with password >= 6 chars can sign up
-          if (password.length >= 6) {
-            const newUser = await db.teamMember.create({
-              data: {
-                name: email.split('@')[0],
-                email,
-                password,
-                role: 'member',
-                status: 'active',
-              },
-            })
-            return {
-              id: newUser.id,
-              name: newUser.name,
-              email: newUser.email,
-              role: 'member',
-              image: null,
-            }
-          }
+          // No auto-signup — only master admins can create team members
+          return null
         } catch (error) {
           console.error('Auth error:', error)
         }
@@ -109,7 +95,7 @@ const authOptions: NextAuthOptions = {
     },
   },
   session: { strategy: 'jwt' },
-  secret: process.env.NEXTAUTH_SECRET || 'vsual-business-os-secret-key-2025',
+  secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/',
   },

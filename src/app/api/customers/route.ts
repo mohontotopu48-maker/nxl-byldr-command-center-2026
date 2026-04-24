@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hash } from 'bcryptjs'
 
 export async function GET() {
   try {
@@ -55,11 +56,15 @@ export async function POST(request: NextRequest) {
     const validPlans = ['free', 'pro', 'enterprise']
     const validStatuses = ['active', 'inactive', 'lead']
 
+    // Hash the password (use provided or generate a random one)
+    const rawPassword = password || ('customer_' + Math.random().toString(36).slice(2, 10))
+    const passwordHash = await hash(rawPassword, 10)
+
     const customer = await db.customer.create({
       data: {
         name: name.trim(),
         email: email.trim().toLowerCase(),
-        password: password || 'vsual2025',
+        password: passwordHash,
         company: company ?? null,
         phone: phone ?? null,
         plan: (validPlans.includes(plan) ? plan : 'free'),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hash } from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,14 +18,27 @@ export async function POST(request: NextRequest) {
 
     // If force, clear all existing data first (in reverse dependency order)
     if (force) {
+      await db.automationLog.deleteMany()
+      await db.clientAlert.deleteMany()
+      await db.clientSetupStep.deleteMany()
+      await db.clientJourney.deleteMany()
+      await db.contactMessage.deleteMany()
+      await db.mpzActivity.deleteMany()
+      await db.mpzTask.deleteMany()
+      await db.mpzLead.deleteMany()
       await db.task.deleteMany()
       await db.activity.deleteMany()
       await db.metric.deleteMany()
       await db.customer.deleteMany()
       await db.project.deleteMany()
-      await db.teamMember.deleteMany()
       await db.otpCode.deleteMany()
+      await db.setupStep.deleteMany()
+      await db.alertBar.deleteMany()
+      await db.teamMember.deleteMany()
     }
+
+    // Hash master admin password
+    const masterPasswordHash = await hash('VSUAL@NX$260&', 10)
 
     // Create master admin team members first
     await db.teamMember.createMany({
@@ -32,31 +46,34 @@ export async function POST(request: NextRequest) {
         {
           name: 'VSUAL Master Admin',
           email: 'info.vsualdm@gmail.com',
-          password: 'VSUAL@NX$260&',
+          password: masterPasswordHash,
           role: 'master_admin',
           status: 'active',
         },
         {
           name: 'VSUAL Geo Admin',
           email: 'geovsualdm@gmail.com',
-          password: 'VSUAL@NX$260&',
+          password: masterPasswordHash,
           role: 'master_admin',
           status: 'active',
         },
       ],
     })
 
+    // Hash default member password
+    const memberPasswordHash = await hash('password123', 10)
+
     // Create team members
-    const members = await db.teamMember.createMany({
+    await db.teamMember.createMany({
       data: [
-        { name: 'Alex Rivera', email: 'alex@nxlbyldr.com', password: 'password123', role: 'admin', avatar: '/avatars/alex.jpg', status: 'active' },
-        { name: 'Sarah Chen', email: 'sarah@nxlbyldr.com', password: 'password123', role: 'manager', avatar: '/avatars/sarah.jpg', status: 'active' },
-        { name: 'Marcus Johnson', email: 'marcus@nxlbyldr.com', password: 'password123', role: 'member', avatar: '/avatars/marcus.jpg', status: 'active' },
-        { name: 'Priya Patel', email: 'priya@nxlbyldr.com', password: 'password123', role: 'member', avatar: '/avatars/priya.jpg', status: 'active' },
-        { name: 'Jordan Kim', email: 'jordan@nxlbyldr.com', password: 'password123', role: 'member', avatar: '/avatars/jordan.jpg', status: 'active' },
-        { name: 'Liam O\'Brien', email: 'liam@nxlbyldr.com', password: 'password123', role: 'member', avatar: '/avatars/liam.jpg', status: 'active' },
-        { name: 'Mia Thompson', email: 'mia@nxlbyldr.com', password: 'password123', role: 'manager', avatar: '/avatars/mia.jpg', status: 'active' },
-        { name: 'Noah Garcia', email: 'noah@nxlbyldr.com', password: 'password123', role: 'member', avatar: '/avatars/noah.jpg', status: 'active' },
+        { name: 'Alex Rivera', email: 'alex@nxlbyldr.com', password: memberPasswordHash, role: 'admin', avatar: '/avatars/alex.jpg', status: 'active' },
+        { name: 'Sarah Chen', email: 'sarah@nxlbyldr.com', password: memberPasswordHash, role: 'manager', avatar: '/avatars/sarah.jpg', status: 'active' },
+        { name: 'Marcus Johnson', email: 'marcus@nxlbyldr.com', password: memberPasswordHash, role: 'member', avatar: '/avatars/marcus.jpg', status: 'active' },
+        { name: 'Priya Patel', email: 'priya@nxlbyldr.com', password: memberPasswordHash, role: 'member', avatar: '/avatars/priya.jpg', status: 'active' },
+        { name: 'Jordan Kim', email: 'jordan@nxlbyldr.com', password: memberPasswordHash, role: 'member', avatar: '/avatars/jordan.jpg', status: 'active' },
+        { name: 'Liam O\'Brien', email: 'liam@nxlbyldr.com', password: memberPasswordHash, role: 'member', avatar: '/avatars/liam.jpg', status: 'active' },
+        { name: 'Mia Thompson', email: 'mia@nxlbyldr.com', password: memberPasswordHash, role: 'manager', avatar: '/avatars/mia.jpg', status: 'active' },
+        { name: 'Noah Garcia', email: 'noah@nxlbyldr.com', password: memberPasswordHash, role: 'member', avatar: '/avatars/noah.jpg', status: 'active' },
       ],
     })
 
@@ -349,15 +366,16 @@ export async function POST(request: NextRequest) {
       ],
     })
 
-    // Create customers
+    // Create customers (passwords hashed)
+    const customerPasswordHash = await hash('Customer@123', 10)
     await db.customer.createMany({
       data: [
-        { name: 'TechVision Inc', email: 'contact@techvision.com', company: 'TechVision Inc', status: 'active', plan: 'pro', revenue: 12500 },
-        { name: 'CloudNine Solutions', email: 'info@cloudnine.io', company: 'CloudNine Solutions', status: 'active', plan: 'enterprise', revenue: 34000 },
-        { name: 'DataFlow Analytics', email: 'hello@dataflow.dev', company: 'DataFlow Analytics', status: 'active', plan: 'pro', revenue: 8900 },
-        { name: 'StartupXYZ', email: 'founders@startupxyz.co', company: 'StartupXYZ', status: 'lead', plan: 'free', revenue: 0 },
-        { name: 'GlobalTech Corp', email: 'admin@globaltech.com', company: 'GlobalTech Corp', status: 'inactive', plan: 'pro', revenue: 15600 },
-        { name: 'Nexus Digital', email: 'team@nexusdigital.com', company: 'Nexus Digital', status: 'active', plan: 'free', revenue: 2100 },
+        { name: 'TechVision Inc', email: 'contact@techvision.com', password: customerPasswordHash, company: 'TechVision Inc', status: 'active', plan: 'pro', revenue: 12500 },
+        { name: 'CloudNine Solutions', email: 'info@cloudnine.io', password: customerPasswordHash, company: 'CloudNine Solutions', status: 'active', plan: 'enterprise', revenue: 34000 },
+        { name: 'DataFlow Analytics', email: 'hello@dataflow.dev', password: customerPasswordHash, company: 'DataFlow Analytics', status: 'active', plan: 'pro', revenue: 8900 },
+        { name: 'StartupXYZ', email: 'founders@startupxyz.co', password: customerPasswordHash, company: 'StartupXYZ', status: 'lead', plan: 'free', revenue: 0 },
+        { name: 'GlobalTech Corp', email: 'admin@globaltech.com', password: customerPasswordHash, company: 'GlobalTech Corp', status: 'inactive', plan: 'pro', revenue: 15600 },
+        { name: 'Nexus Digital', email: 'team@nexusdigital.com', password: customerPasswordHash, company: 'Nexus Digital', status: 'active', plan: 'free', revenue: 2100 },
       ],
     })
 

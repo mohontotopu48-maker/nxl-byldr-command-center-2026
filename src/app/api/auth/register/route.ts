@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hash } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
@@ -13,6 +14,10 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
     }
 
     const normalizedEmail = email.toLowerCase().trim()
@@ -33,11 +38,14 @@ export async function POST(request: NextRequest) {
     const isMasterAdmin = MASTER_ADMIN_EMAILS.includes(normalizedEmail as typeof MASTER_ADMIN_EMAILS[number])
     const role = isMasterAdmin ? 'master_admin' : 'member'
 
+    // Hash the password
+    const passwordHash = await hash(password, 10)
+
     const user = await db.teamMember.create({
       data: {
         name: name || normalizedEmail.split('@')[0],
         email: normalizedEmail,
-        password: password || '',
+        password: passwordHash,
         role,
         status: 'active',
       },
