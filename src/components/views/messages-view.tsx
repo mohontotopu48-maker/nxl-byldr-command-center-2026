@@ -358,7 +358,7 @@ export function MessagesView() {
         </motion.div>
 
         {/* ── Stats Row ───────────────────────────────────────────────────── */}
-        <motion.div variants={itemVariants} className="mb-6 grid grid-cols-3 gap-3">
+        <motion.div variants={itemVariants} className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card className="border-border bg-card py-4 shadow-sm">
             <CardContent className="flex items-center gap-3 px-4">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">

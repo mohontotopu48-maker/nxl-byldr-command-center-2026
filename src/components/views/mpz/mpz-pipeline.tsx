@@ -81,7 +81,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
   }
 
   return (
-    <div className="h-[calc(100vh-10rem)] flex flex-col p-4 md:p-6">
+    <div className="h-[calc(100dvh-10rem)] flex flex-col p-4 md:p-6">
       <ScrollArea className="flex-1">
         <div className="flex gap-4 pb-4 min-h-full">
           {PIPELINE_STAGES.map(stage => {
@@ -101,7 +101,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
                 </div>
 
                 {/* Column Body */}
-                <ScrollArea className="flex-1 max-h-[calc(100vh-16rem)] px-2 pb-2">
+                <ScrollArea className="flex-1 max-h-[calc(100dvh-16rem)] px-2 pb-2">
                   <div className="space-y-2">
                     {stageLeads.map(lead => {
                       const isHot = lead.stage === 'hot_lead'

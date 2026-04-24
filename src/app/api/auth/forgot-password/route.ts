@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomInt } from 'crypto'
 import { db } from '@/lib/db'
 
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return randomInt(100000, 1000000).toString()
 }
 
 export async function POST(request: NextRequest) {
@@ -44,7 +45,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'OTP sent to your email address',
-      ...(process.env.NODE_ENV === 'development' && { otp }),
     })
   } catch (error) {
     console.error('Forgot password error:', error)

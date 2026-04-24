@@ -132,9 +132,10 @@
     text-size-adjust: 100%;
   }
 
-  /* Touch target minimum size for interactive elements */
-  button, a, [role="button"] {
-    min-height: 36px;
+  /* Touch target minimum size for interactive elements (WCAG 44px) */
+  button, a, [role="button"], select, input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
   }
 
   /* Prevent horizontal scroll on mobile */

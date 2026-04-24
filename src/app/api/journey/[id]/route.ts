@@ -39,6 +39,30 @@ export async function PATCH(
     const body = await request.json()
     const { currentPhase, overallStatus, notes } = body
 
+    const VALID_PHASES = ['handover', 'game_plan', 'technical', 'live']
+    const VALID_STATUSES = ['in_progress', 'completed', 'on_hold', 'cancelled']
+
+    if (currentPhase !== undefined && !VALID_PHASES.includes(currentPhase)) {
+      return NextResponse.json(
+        { error: `Invalid phase. Must be one of: ${VALID_PHASES.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    if (overallStatus !== undefined && !VALID_STATUSES.includes(overallStatus)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    if (notes !== undefined && typeof notes === 'string' && notes.length > 10000) {
+      return NextResponse.json(
+        { error: 'Notes must be 10000 characters or less' },
+        { status: 400 }
+      )
+    }
+
     const journey = await db.clientJourney.update({
       where: { id },
       data: {

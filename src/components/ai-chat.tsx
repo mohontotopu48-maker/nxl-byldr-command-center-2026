@@ -134,9 +134,9 @@ export function AiChat() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-accent"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
 

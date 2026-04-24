@@ -543,7 +543,7 @@ function JourneyPipelineCard({ journey, index, onClick }: { journey: ClientJourn
         {pct === 100 ? 'Complete' : `${pct}%`}
       </Badge>
 
-      <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
+      <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0 hidden sm:block" />
     </motion.div>
   )
 }

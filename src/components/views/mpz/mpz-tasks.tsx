@@ -117,10 +117,10 @@ export function MpzTasks() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="h-8 w-8 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
             onClick={() => handleDelete(task.id)}
           >
-            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </motion.div>
@@ -147,7 +147,7 @@ export function MpzTasks() {
         </CardHeader>
         <Separator />
         <CardContent className="p-3 pt-2">
-          <ScrollArea className="h-[calc(100vh-20rem)]">
+          <ScrollArea className="h-[calc(100dvh-20rem)]">
             <div className="space-y-2">
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -168,7 +168,7 @@ export function MpzTasks() {
   }
 
   return (
-    <div className="p-4 md:p-6 h-[calc(100vh-10rem)]">
+    <div className="p-4 md:p-6 h-[calc(100dvh-10rem)]">
       <div className="grid gap-4 h-full lg:grid-cols-2">
         {renderColumn('Sal', salTasks, 'bg-pink-500')}
         {renderColumn('Geo', geoTasks, 'bg-amber-500')}

@@ -19,6 +19,8 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   tasks       Task[]
+
+  @@index([status])
 }
 
 model Task {
@@ -34,6 +36,10 @@ model Task {
   updatedAt   DateTime   @updatedAt
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee    TeamMember? @relation(fields: [assigneeId], references: [id])
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
 }
 
 model TeamMember {
@@ -50,6 +56,8 @@ model TeamMember {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tasks     Task[]
+
+  @@index([role])
 }
 
 model Activity {
@@ -59,6 +67,8 @@ model Activity {
   userId    String?
   metadata  String?
   createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
 }
 
 model Metric {
@@ -84,6 +94,9 @@ model Customer {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   journeys    ClientJourney[]
+
+  @@index([status])
+  @@index([plan])
 }
 
 model OtpCode {
@@ -93,6 +106,8 @@ model OtpCode {
   verified  Boolean  @default(false)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model SetupStep {
@@ -133,6 +148,10 @@ model ClientJourney {
   setupSteps      ClientSetupStep[]
   alerts          ClientAlert[]
   automationLogs  AutomationLog[]
+
+  @@unique([customerId])
+  @@index([currentPhase])
+  @@index([overallStatus])
 }
 
 model ClientSetupStep {
@@ -147,6 +166,9 @@ model ClientSetupStep {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   journey     ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId])
+  @@index([status])
 }
 
 model ClientAlert {
@@ -158,6 +180,8 @@ model ClientAlert {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   journey   ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId])
 }
 
 model AutomationLog {
@@ -168,6 +192,8 @@ model AutomationLog {
   triggeredBy String  @default("manual")
   createdAt  DateTime @default(now())
   journey    ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId])
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -192,6 +218,10 @@ model MpzLead {
   updatedAt          DateTime @updatedAt
   tasks              MpzTask[]
   activities         MpzActivity[]
+
+  @@index([stage])
+  @@index([createdAt(sort: Desc)])
+  @@index([assignedTo])
 }
 
 model MpzTask {
@@ -206,6 +236,10 @@ model MpzTask {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   lead        MpzLead?  @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([status])
+  @@index([assignedTo])
 }
 
 model MpzActivity {
@@ -215,6 +249,9 @@ model MpzActivity {
   leadId    String?
   createdAt DateTime @default(now())
   lead      MpzLead? @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([createdAt(sort: Desc)])
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -234,4 +271,6 @@ model ContactMessage {
   repliedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([status])
 }

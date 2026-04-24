@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { db } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
@@ -41,7 +42,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (stored.code !== otp.trim()) {
+    const trimmedOtp = otp.trim()
+    const isMatch = stored.code.length === trimmedOtp.length &&
+      timingSafeEqual(Buffer.from(stored.code), Buffer.from(trimmedOtp))
+
+    if (!isMatch) {
       return NextResponse.json(
         { error: 'Invalid OTP. Please try again.' },
         { status: 400 }

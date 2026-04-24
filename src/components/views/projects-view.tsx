@@ -264,7 +264,7 @@ export function ProjectsView() {
                   className="bg-background border-border text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary/30 resize-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-foreground">Status</Label>
                   <Select value={formStatus} onValueChange={setFormStatus}>
