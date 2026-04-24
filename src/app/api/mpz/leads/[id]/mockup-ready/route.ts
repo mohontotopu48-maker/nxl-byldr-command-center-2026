@@ -13,12 +13,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
     }
 
+    // Validate stage transition — only allow from new_lead or mockup_needed
+    const VALID_CURRENT_STAGES = ['new_lead', 'mockup_needed']
+    if (!VALID_CURRENT_STAGES.includes(lead.stage)) {
+      return NextResponse.json(
+        { error: `Cannot mark mockup ready — lead is at "${lead.stage}", expected one of: ${VALID_CURRENT_STAGES.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
     const updatedLead = await db.mpzLead.update({
       where: { id },
       data: {
         mockupReady: true,
         stage: 'mockup_sent',
         automationStarted: true,
+        automationDay: 1,
       },
       include: { tasks: true, activities: true },
     })
@@ -29,7 +39,7 @@ export async function PUT(
         description: `Begin 14-day automation funnel for ${lead.name} (${lead.businessName})`,
         status: 'pending',
         priority: 'high',
-        assignedTo: 'Geo',
+        assignedTo: lead.assignedTo || 'Geo',
         leadId: id,
       },
     })
@@ -37,7 +47,7 @@ export async function PUT(
     await db.mpzActivity.create({
       data: {
         type: 'mockup_ready',
-        message: `Mockup marked as ready for ${lead.name}. Automation started, 14-day funnel task assigned to Geo.`,
+        message: `Mockup marked as ready for ${lead.name}. Automation started, 14-day funnel task assigned.`,
         leadId: id,
       },
     })

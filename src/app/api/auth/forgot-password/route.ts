@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
     // Delete any existing OTP for this email
     await db.otpCode.deleteMany({ where: { email: normalizedEmail } })
 
+    // Clean up expired OTPs older than 1 hour (prevent unbounded growth)
+    await db.otpCode.deleteMany({
+      where: { expiresAt: { lt: new Date(Date.now() - 60 * 60 * 1000) } },
+    })
+
     // Store new OTP in database
     await db.otpCode.create({
       data: {
@@ -39,7 +44,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'OTP sent to your email address',
-      ...(process.env.NODE_ENV !== 'production' && { otp }),
+      ...(process.env.NODE_ENV === 'development' && { otp }),
     })
   } catch (error) {
     console.error('Forgot password error:', error)

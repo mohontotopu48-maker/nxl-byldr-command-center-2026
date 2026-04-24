@@ -7,10 +7,6 @@ export async function POST(request: Request) {
     const { email, password } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 })
-    }
-
-    if (password.length < 6) {
       return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
     }
 
@@ -19,8 +15,8 @@ export async function POST(request: Request) {
       where: { email: email.toLowerCase().trim() },
     })
 
-    if (!customer) {
-      return NextResponse.json({ error: 'No customer account found with this email.' }, { status: 401 })
+    if (!customer || !customer.password || !customer.password.startsWith('$2b')) {
+      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
     }
 
     // Check password — only bcrypt hashes are accepted

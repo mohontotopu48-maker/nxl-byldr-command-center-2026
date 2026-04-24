@@ -35,6 +35,17 @@ export async function PUT(
     const body = await request.json()
     const { stage, assignedTo, mockupReady, automationStarted, automationDay, notes } = body
 
+    // Validate stage if provided
+    const VALID_STAGES = ['new_lead', 'mockup_needed', 'mockup_sent', 'engaged', 'video_sent', 'proof_stage', 'hot_lead', 'call_scheduled', 'closed_won', 'closed_lost', 'retention']
+    if (stage !== undefined && !VALID_STAGES.includes(stage)) {
+      return NextResponse.json({ error: 'Invalid stage value' }, { status: 400 })
+    }
+
+    // Validate automationDay bounds
+    if (automationDay !== undefined && (typeof automationDay !== 'number' || automationDay < 0 || automationDay > 14)) {
+      return NextResponse.json({ error: 'automationDay must be between 0 and 14' }, { status: 400 })
+    }
+
     const lead = await db.mpzLead.update({
       where: { id },
       data: {

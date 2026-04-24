@@ -59,10 +59,10 @@ export async function POST(request: NextRequest) {
 
     const contactMessage = await db.contactMessage.create({
       data: {
-        customerName,
-        customerEmail,
-        subject,
-        message,
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim().toLowerCase(),
+        subject: subject.trim(),
+        message: message.trim(),
         priority: priority || 'normal',
         status: 'unread',
         assignedTo: 'both',

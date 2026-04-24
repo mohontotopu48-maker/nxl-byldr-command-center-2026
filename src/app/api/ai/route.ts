@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
+import { checkRequestAuthSync } from "@/lib/auth-guard";
 
 /** Hugging Face Inference / router (OpenAI-compatible), same as Python OpenAI(base_url=..., api_key=HF_TOKEN). */
 function isHuggingFaceRouterConfigured(): boolean {
@@ -15,7 +16,7 @@ function huggingFaceRouterBaseUrl(): string {
 
 async function chatViaHuggingFaceRouter(
   systemPrompt: string,
-  userMessage: string,
+  messages: Array<{ role: string; content: string }>,
 ): Promise<string> {
   const apiKey = process.env.HF_TOKEN?.trim();
   if (!apiKey) {
@@ -37,8 +38,9 @@ async function chatViaHuggingFaceRouter(
         model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
+          ...messages,
         ],
+        max_tokens: 500,
       }),
     },
   );
@@ -80,7 +82,7 @@ function openRouterBaseUrl(): string {
 
 async function chatViaOpenRouter(
   systemPrompt: string,
-  userMessage: string,
+  messages: Array<{ role: string; content: string }>,
 ): Promise<string> {
   const apiKey =
     process.env.Z_AI_API_KEY || process.env.OPENROUTER_API_KEY || "";
@@ -110,8 +112,9 @@ async function chatViaOpenRouter(
         model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
+          ...messages,
         ],
+        max_tokens: 500,
       }),
     },
   );
@@ -131,8 +134,12 @@ async function chatViaOpenRouter(
 }
 
 export async function POST(request: NextRequest) {
+  // Auth check (lightweight — no DB lookup for chat)
+  const auth = checkRequestAuthSync(request);
+  if (!auth.authorized) return auth.response;
+
   try {
-    const { message, context } = await request.json();
+    const { message, context, history } = await request.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -141,23 +148,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const systemPrompt = context
-      ? `You are an AI assistant for VSUAL NXL BYLDR Command Center. ${context}`
-      : `You are an AI assistant for VSUAL NXL BYLDR Command Center — the growth, marketing & AI automation hub for project management, team collaboration, and lead activity tracking. You help users manage projects, teams, customers, and analytics. Be concise, helpful, and professional. Keep responses under 200 words unless asked for detailed analysis.`;
+    // Input length limit
+    if (message.length > 2000) {
+      return NextResponse.json(
+        { error: "Message too long. Maximum 2000 characters." },
+        { status: 400 },
+      );
+    }
+
+    // Sanitize context — only allow structured object with known keys (NO free-text injection into system prompt)
+    let safeContext = '';
+    if (context) {
+      if (typeof context === 'object' && context !== null && !Array.isArray(context)) {
+        const ALLOWED_KEYS = ['journeyId', 'leadId', 'stage', 'view', 'customerName', 'projectName'];
+        const entries = Object.entries(context as Record<string, unknown>);
+        const filtered = entries.filter(([key, val]) => ALLOWED_KEYS.includes(key) && typeof val === 'string');
+        if (filtered.length > 0) {
+          safeContext = ' Context: ' + JSON.stringify(Object.fromEntries(filtered));
+        }
+      }
+      // Reject free-text context (string) — prevents prompt injection
+      // If context was a string before this refactor, it's now ignored for security
+    }
+
+    const systemPrompt = `You are an AI assistant for VSUAL NXL BYLDR Command Center — the growth, marketing & AI automation hub for project management, team collaboration, and lead activity tracking. You help users manage projects, teams, customers, and analytics. Be concise, helpful, and professional. Keep responses under 200 words unless asked for detailed analysis.${safeContext}`;
+
+    // Build message history (last 8 turns max to control token usage)
+    const userMessages: Array<{ role: string; content: string }> = []
+    if (Array.isArray(history) && history.length > 0) {
+      const recentHistory = history.slice(-8)
+      for (const msg of recentHistory) {
+        if (msg && typeof msg.role === 'string' && typeof msg.content === 'string') {
+          userMessages.push({ role: msg.role, content: msg.content })
+        }
+      }
+    }
+    userMessages.push({ role: 'user', content: message })
 
     let response: string;
     if (isHuggingFaceRouterConfigured()) {
-      response = await chatViaHuggingFaceRouter(systemPrompt, message);
+      response = await chatViaHuggingFaceRouter(systemPrompt, userMessages);
     } else if (isOpenRouterConfigured()) {
-      response = await chatViaOpenRouter(systemPrompt, message);
+      response = await chatViaOpenRouter(systemPrompt, userMessages);
     } else {
       const zai = await ZAI.create();
       const completion = await zai.chat.completions.create({
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message },
+          { role: "system" as const, content: systemPrompt },
+          ...userMessages as Array<{ role: "system" | "user" | "assistant"; content: string }>,
         ],
         thinking: { type: "disabled" },
+        max_tokens: 500,
       });
       response =
         completion.choices[0]?.message?.content ||

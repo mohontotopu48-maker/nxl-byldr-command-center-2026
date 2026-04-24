@@ -22,7 +22,7 @@ export async function GET() {
 
 // POST /api/alert-bar — update alert status (auth required)
 export async function POST(request: NextRequest) {
-  const auth = checkRequestAuth(request)
+  const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
 
   try {

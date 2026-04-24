@@ -5,7 +5,7 @@ import { requireMasterAdmin } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
   // Seed endpoint requires master admin authentication
-  const auth = requireMasterAdmin(request)
+  const auth = await requireMasterAdmin(request)
   if (!auth.authorized) return auth.response
 
   try {

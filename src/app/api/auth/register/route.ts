@@ -6,7 +6,7 @@ import { requireMasterAdmin } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
   // Only master admins can register new team members
-  const auth = requireMasterAdmin(request)
+  const auth = await requireMasterAdmin(request)
   if (!auth.authorized) return auth.response
 
   try {

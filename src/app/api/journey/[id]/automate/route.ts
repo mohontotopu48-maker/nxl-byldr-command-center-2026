@@ -32,8 +32,10 @@ export async function POST(
       return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
     }
 
+    const totalSteps = journey.totalSteps || journey.setupSteps.length
     const stepsSummary = journey.setupSteps.map(s => `Step ${s.stepNumber}: "${s.title}" [${s.phase}] → ${s.status}`).join('\n')
     const completedCount = journey.setupSteps.filter(s => s.status === 'completed').length
+    const pct = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0
     const currentStep = journey.setupSteps.find(s => s.status === 'in_progress') || journey.setupSteps.find(s => s.status === 'pending')
     const recentLogs = journey.automationLogs.map(l => `- [${l.triggeredBy}] ${l.action}`).join('\n')
 
@@ -42,12 +44,11 @@ export async function POST(
 
     switch (action) {
       case 'suggest_next': {
-        // AI suggests what the next action should be
         const prompt = `You are a project manager for VSUAL NXL BYLDR Command Center, managing client onboarding for ${journey.customer.name} (${journey.customer.company || 'N/A'}).
 
 CURRENT JOURNEY STATE:
 Phase: ${journey.currentPhase}
-Progress: ${completedCount}/${journey.totalSteps} steps completed
+Progress: ${completedCount}/${totalSteps} steps completed (${pct}%)
 ${currentStep ? `Current Step: #${currentStep.stepNumber} "${currentStep.title}" (${currentStep.status})` : 'All steps completed!'}
 
 ALL STEPS:
@@ -64,16 +65,20 @@ Provide a concise recommendation for the next action (1-2 sentences). Be specifi
             { role: 'user', content: prompt },
           ],
           thinking: { type: 'disabled' },
+          max_tokens: 200,
         })
         aiResponse = completion.choices[0]?.message?.content || 'Unable to generate suggestion.'
+
+        await db.automationLog.create({
+          data: { journeyId, action: `AI suggest_next: ${aiResponse.slice(0, 200)}`, triggeredBy: 'ai_suggest' },
+        })
         break
       }
 
       case 'generate_alert': {
-        // AI generates an appropriate alert message based on current state
         const prompt = `You are managing the client portal for ${journey.customer.name}.
 
-PROGRESS: ${completedCount}/13 steps done (${Math.round((completedCount / 13) * 100)}%)
+PROGRESS: ${completedCount}/${totalSteps} steps done (${pct}%)
 CURRENT PHASE: ${journey.currentPhase}
 CURRENT STEP: ${currentStep ? `#${currentStep.stepNumber} "${currentStep.title}"` : 'All done'}
 
@@ -89,30 +94,37 @@ Generate a short, professional alert message for the client. Rules:
             { role: 'user', content: prompt },
           ],
           thinking: { type: 'disabled' },
+          max_tokens: 100,
         })
         aiResponse = completion.choices[0]?.message?.content || 'All Systems Go — Project on Schedule.'
         
-        // Auto-create the alert
+        // Update or create the alert (don't deleteMany — use upsert pattern)
         const isActive = aiResponse.includes('ACTION REQUIRED')
-        await db.clientAlert.deleteMany({ where: { journeyId } })
-        await db.clientAlert.create({
-          data: {
-            journeyId,
-            active: isActive,
-            message: aiResponse,
-            priority: isActive ? 'urgent' : 'normal',
-          },
-        })
+        const existingAlert = journey.alerts.length > 0 ? journey.alerts[0] : null
+        if (existingAlert) {
+          await db.clientAlert.update({
+            where: { id: existingAlert.id },
+            data: { active: isActive, message: aiResponse, priority: isActive ? 'urgent' : 'normal' },
+          })
+        } else {
+          await db.clientAlert.create({
+            data: { journeyId, active: isActive, message: aiResponse, priority: isActive ? 'urgent' : 'normal' },
+          })
+        }
         updatedData = { alertActive: isActive, alertMessage: aiResponse }
+
+        await db.automationLog.create({
+          data: { journeyId, action: `AI generate_alert: "${aiResponse}" (active=${isActive})`, triggeredBy: 'ai_alert' },
+        })
         break
       }
 
-      case 'auto_advance': {
-        // AI decides which step to advance based on context
+      case 'auto_advance_preview': {
+        // AI suggests which steps to advance — returns preview WITHOUT applying changes
         const prompt = `You are an AI automation system for a client onboarding journey.
 
 CLIENT: ${journey.customer.name} (${journey.customer.company || 'N/A'})
-PROGRESS: ${completedCount}/13 steps (${Math.round((completedCount / 13) * 100)}%)
+PROGRESS: ${completedCount}/${totalSteps} steps (${pct}%)
 PHASE: ${journey.currentPhase}
 
 ALL STEPS:
@@ -123,7 +135,7 @@ Example: [{"stepNumber":3,"status":"completed"},{"stepNumber":4,"status":"in_pro
 
 Rules:
 - Only advance 1-2 steps at most
-- Don't skip steps
+- Don't skip steps — cannot complete step N unless step N-1 is completed
 - "in_progress" means currently being worked on
 - Be conservative — only mark as completed what makes logical sense
 - Return ONLY the JSON array, nothing else`
@@ -134,28 +146,80 @@ Rules:
             { role: 'user', content: prompt },
           ],
           thinking: { type: 'disabled' },
+          max_tokens: 300,
         })
 
         let aiContent = completion.choices[0]?.message?.content || '[]'
-        // Clean up response - remove markdown fences if present
         aiContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-        
-        const parsed = JSON.parse(aiContent)
-        if (!Array.isArray(parsed)) throw new Error('Invalid AI response format')
 
-        const updates: { stepId: string; status: string }[] = []
-        for (const item of parsed) {
-          const step = journey.setupSteps.find(s => s.stepNumber === item.stepNumber)
-          if (step && ['completed', 'in_progress', 'pending'].includes(item.status)) {
-            await db.clientSetupStep.update({
-              where: { id: step.id },
-              data: {
-                status: item.status,
-                completedAt: item.status === 'completed' ? new Date() : null,
-              },
-            })
-            updates.push({ stepId: step.id, status: item.status })
+        // Safe JSON parse with validation
+        let suggestedUpdates: Array<{ stepNumber: number; status: string }> = []
+        try {
+          const jsonMatch = aiContent.match(/\[[\s\S]*\]/)
+          if (!jsonMatch) throw new Error('No JSON array found')
+          const parsed = JSON.parse(jsonMatch[0])
+          if (!Array.isArray(parsed)) throw new Error('Not an array')
+          if (parsed.length > 2) parsed.length = 2 // Enforce max 2 steps
+
+          const validStatuses = ['completed', 'in_progress', 'pending']
+          for (const item of parsed) {
+            if (typeof item !== 'object' || item === null) continue
+            if (typeof item.stepNumber !== 'number' || !validStatuses.includes(item.status)) continue
+            const step = journey.setupSteps.find(s => s.stepNumber === item.stepNumber)
+            if (!step) continue
+            // Prevent skipping: cannot complete step N unless step N-1 is completed
+            if (item.status === 'completed' && item.stepNumber > 1) {
+              const prev = journey.setupSteps.find(s => s.stepNumber === item.stepNumber - 1)
+              if (prev && prev.status !== 'completed') continue
+            }
+            suggestedUpdates.push({ stepNumber: item.stepNumber, status: item.status })
           }
+        } catch {
+          suggestedUpdates = []
+        }
+
+        if (suggestedUpdates.length === 0) {
+          aiResponse = 'AI found no valid steps to advance at this time.'
+        } else {
+          aiResponse = `AI suggests advancing ${suggestedUpdates.length} step(s): ${suggestedUpdates.map(u => `Step ${u.stepNumber} → ${u.status}`).join(', ')}. Click "Confirm" to apply or "Cancel" to discard.`
+        }
+        updatedData = { suggestedUpdates }
+
+        await db.automationLog.create({
+          data: { journeyId, action: `AI auto_advance_preview: ${suggestedUpdates.length} suggestion(s)`, triggeredBy: 'ai_preview' },
+        })
+        break
+      }
+
+      case 'auto_advance_confirm': {
+        // Admin explicitly confirmed AI suggestions — apply to DB
+        const { updates } = await request.json()
+
+        if (!Array.isArray(updates) || updates.length > 2 || updates.length === 0) {
+          return NextResponse.json({ error: 'Invalid updates payload' }, { status: 400 })
+        }
+
+        const validStatuses = ['completed', 'in_progress', 'pending']
+        const appliedUpdates: Array<{ stepId: string; status: string }> = []
+
+        for (const item of updates) {
+          if (typeof item !== 'object' || item === null) continue
+          if (typeof item.stepNumber !== 'number' || !validStatuses.includes(item.status)) continue
+          const step = journey.setupSteps.find(s => s.stepNumber === item.stepNumber)
+          if (!step) continue
+          if (item.status === 'completed' && item.stepNumber > 1) {
+            const prev = journey.setupSteps.find(s => s.stepNumber === item.stepNumber - 1)
+            if (prev && prev.status !== 'completed') continue
+          }
+
+          await db.clientSetupStep.update({
+            where: { id: step.id },
+            data: {
+              status: item.status,
+              completedAt: item.status === 'completed' ? new Date() : null,
+            },
+          })
+          appliedUpdates.push({ stepId: step.id, status: item.status })
         }
 
         // Recalculate journey
@@ -172,23 +236,22 @@ Rules:
 
         await db.clientJourney.update({
           where: { id: journeyId },
-          data: { completedSteps: newCompleted, currentPhase, overallStatus: newCompleted === 13 ? 'completed' : 'in_progress' },
+          data: { completedSteps: newCompleted, currentPhase, overallStatus: newCompleted === totalSteps ? 'completed' : 'in_progress' },
         })
 
-        aiResponse = `AI advanced ${updates.length} step(s). ${updates.map(u => `Step ${u.stepId.split('_')[0]} → ${u.status}`).join(', ')}`
-        updatedData = { updates, completedSteps: newCompleted, currentPhase }
+        aiResponse = `Confirmed ${appliedUpdates.length} step advance(s). ${appliedUpdates.map(u => `Step ${u.stepId.split('_')[0]} → ${u.status}`).join(', ')}`
+        updatedData = { updates: appliedUpdates, completedSteps: newCompleted, currentPhase }
 
         await db.automationLog.create({
-          data: { journeyId, action: aiResponse, triggeredBy: 'ai_auto' },
+          data: { journeyId, action: `Admin confirmed advance: ${JSON.stringify(appliedUpdates)}`, triggeredBy: 'manual_confirm' },
         })
         break
       }
 
       case 'progress_summary': {
-        // AI generates a progress summary for the client
         const prompt = `Generate a brief, professional progress update for ${journey.customer.name}.
 
-PROGRESS: ${completedCount}/13 steps completed (${Math.round((completedCount / 13) * 100)}%)
+PROGRESS: ${completedCount}/${totalSteps} steps completed (${pct}%)
 CURRENT PHASE: ${journey.currentPhase}
 ${currentStep ? `WORKING ON: Step #${currentStep.stepNumber} "${currentStep.title}"` : 'ALL STEPS COMPLETED!'}
 
@@ -203,8 +266,13 @@ Write a friendly 2-3 sentence progress update. Mention what was completed, what'
             { role: 'user', content: prompt },
           ],
           thinking: { type: 'disabled' },
+          max_tokens: 200,
         })
         aiResponse = completion.choices[0]?.message?.content || 'Progress update unavailable.'
+
+        await db.automationLog.create({
+          data: { journeyId, action: `AI progress_summary: ${aiResponse.slice(0, 200)}`, triggeredBy: 'ai_summary' },
+        })
         break
       }
 
@@ -215,6 +283,6 @@ Write a friendly 2-3 sentence progress update. Mention what was completed, what'
     return NextResponse.json({ response: aiResponse, ...updatedData })
   } catch (error) {
     console.error('AI Automation error:', error)
-    return NextResponse.json({ error: 'AI automation failed', details: String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'AI automation failed' }, { status: 500 })
   }
 }

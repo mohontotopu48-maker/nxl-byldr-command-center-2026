@@ -85,6 +85,10 @@ export async function POST(request: NextRequest) {
         avatar: avatar ?? null,
         status: status ?? 'active',
       },
+      select: {
+        id: true, name: true, email: true, role: true, avatar: true, status: true,
+        phone: true, location: true, bio: true, createdAt: true, updatedAt: true,
+      },
     })
 
     return NextResponse.json(member, { status: 201 })

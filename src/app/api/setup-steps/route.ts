@@ -24,7 +24,11 @@ export async function GET() {
         { stepNumber: 13, title: 'Lead Machine Running', phase: 'live', status: 'pending' },
       ]
       
-      const created = await db.setupStep.createMany({ data: defaults })
+      try {
+        await db.setupStep.createMany({ data: defaults, skipDuplicates: true })
+      } catch {
+        // Another concurrent request already inserted — ignore
+      }
       const allSteps = await db.setupStep.findMany({ orderBy: { stepNumber: 'asc' } })
       return NextResponse.json(allSteps)
     }

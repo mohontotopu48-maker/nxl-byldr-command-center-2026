@@ -75,6 +75,10 @@ export async function POST(request: NextRequest) {
         status: (validStatuses.includes(status) ? status : 'lead'),
         revenue: 0,
       },
+      select: {
+        id: true, name: true, email: true, company: true, phone: true,
+        status: true, plan: true, revenue: true, notes: true, createdAt: true, updatedAt: true,
+      },
     })
 
     return NextResponse.json(customer, { status: 201 })

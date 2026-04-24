@@ -41,7 +41,7 @@ const ACTIVITY_DATA = [
 
 export async function POST(request: NextRequest) {
   // Auth check
-  const auth = checkRequestAuth(request)
+  const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
 
   try {
