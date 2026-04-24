@@ -1,32 +1,33 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import pg from "pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  const accelerateUrl = process.env.PRISMA_ACCELERATE_URL;
-  if (accelerateUrl) {
-    return new PrismaClient({
-      accelerateUrl,
-      log: process.env.NODE_ENV === "development" ? ["error"] : [],
-    });
-  }
-
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error(
-      "Set DATABASE_URL (direct Postgres), or add PRISMA_ACCELERATE_URL and keep DATABASE_URL for migrations.",
+      "DATABASE_URL environment variable is required. " +
+      "Format: postgresql://user:password@host:5432/database?sslmode=require"
     );
   }
-  const adapter = new PrismaPg(connectionString);
+
+  // Prisma 6.x: PrismaPg accepts pg.Pool or pg.PoolConfig
+  const pool = new pg.Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
+
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["error"] : [],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+// Cache in development to avoid exhausting database connections during hot reloads
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = db;
+}
