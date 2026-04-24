@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { compare } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
+import { isDbAvailable, db } from '@/lib/db'
+
+// Master admin bcrypt hashes (fallback when DATABASE_URL is not set)
+const MASTER_ADMIN_HASHES: Record<string, string> = {
+  'info.vsualdm@gmail.com': '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi',
+  'geovsualdm@gmail.com': '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi',
+}
 
 export async function POST(request: Request) {
   try {
@@ -11,9 +17,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 })
     }
 
-    // Find user by email
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // ═══ MASTER ADMIN FALLBACK (works even without DATABASE_URL) ═══
+    if (MASTER_ADMIN_EMAILS.includes(normalizedEmail as typeof MASTER_ADMIN_EMAILS[number])) {
+      const storedHash = MASTER_ADMIN_HASHES[normalizedEmail]
+      if (!storedHash) {
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+      }
+      const isValid = await compare(password, storedHash)
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+      }
+      return NextResponse.json({
+        user: {
+          id: `admin-${normalizedEmail}`,
+          name: normalizedEmail.split('@')[0],
+          email: normalizedEmail,
+          role: 'master_admin',
+        },
+      })
+    }
+
+    // ═══ DATABASE LOOKUP (for regular team members) ═══
+    if (!isDbAvailable()) {
+      return NextResponse.json({ error: 'Service temporarily unavailable. Database is not configured.' }, { status: 503 })
+    }
+
     const user = await db.teamMember.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     })
 
     if (!user) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDbAvailable } from '@/lib/db'
 import { compare } from 'bcryptjs'
 
 export async function POST(request: Request) {
@@ -8,6 +8,11 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
+    }
+
+    // Check database availability
+    if (!isDbAvailable()) {
+      return NextResponse.json({ error: 'Service temporarily unavailable. Database is not configured.' }, { status: 503 })
     }
 
     // Find customer by email (not admin TeamMember)
