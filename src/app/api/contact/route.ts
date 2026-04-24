@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 // GET /api/contact — list all contact messages (admin view)
 // Supports ?status=new|in_progress|replied|closed|spam filter
@@ -43,9 +44,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/contact — customer sends a new message
+// POST /api/contact — customer sends a new message (public, rate-limited)
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`contact-form:${ip}`, { limit: 5, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many messages. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const body = await request.json()
     const { customerName, customerEmail, subject, message, priority } = body
 
@@ -74,13 +84,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
     }
 
+    const validPriorities = ['low', 'normal', 'high', 'urgent']
+    const validPriority = validPriorities.includes(priority) ? priority : 'normal'
+
     const contactMessage = await db.contactMessage.create({
       data: {
         customerName: customerName.trim(),
         customerEmail: customerEmail.trim().toLowerCase(),
         subject: subject.trim(),
         message: message.trim(),
-        priority: priority || 'normal',
+        priority: validPriority,
         status: 'new',
         assignedTo: 'both',
       },

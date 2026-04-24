@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
-import { checkRequestAuthSync } from "@/lib/auth-guard";
+import { checkRequestAuth } from "@/lib/auth-guard";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 /** Hugging Face Inference / router (OpenAI-compatible), same as Python OpenAI(base_url=..., api_key=HF_TOKEN). */
 function isHuggingFaceRouterConfigured(): boolean {
@@ -96,7 +97,7 @@ async function chatViaOpenRouter(
   const referer =
     process.env.OPENROUTER_HTTP_REFERER ||
     process.env.NEXTAUTH_URL ||
-    "http://localhost:3000";
+    "";
 
   const res = await fetch(
     `${openRouterBaseUrl()}/chat/completions`,
@@ -105,7 +106,7 @@ async function chatViaOpenRouter(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": referer,
+        ...(referer ? { "HTTP-Referer": referer } : {}),
         "X-Title": "NXL BYLDR Command Center",
       },
       body: JSON.stringify({
@@ -134,8 +135,18 @@ async function chatViaOpenRouter(
 }
 
 export async function POST(request: NextRequest) {
-  // Auth check (lightweight — no DB lookup for chat)
-  const auth = checkRequestAuthSync(request);
+  // Rate limit AI calls to prevent unbounded API costs
+  const ip = getClientIp(request)
+  const rl = rateLimit(`ai-chat:${ip}`, { limit: 20, windowMs: 60000 })
+  if (!rl.success) {
+    return NextResponse.json({ error: 'Too many AI requests. Please wait a moment.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+    })
+  }
+
+  // Auth check (async — verifies JWT signature)
+  const auth = await checkRequestAuth(request);
   if (!auth.authorized) return auth.response;
 
   try {
@@ -167,8 +178,6 @@ export async function POST(request: NextRequest) {
           safeContext = ' Context: ' + JSON.stringify(Object.fromEntries(filtered));
         }
       }
-      // Reject free-text context (string) — prevents prompt injection
-      // If context was a string before this refactor, it's now ignored for security
     }
 
     const systemPrompt = `You are an AI assistant for VSUAL NXL BYLDR Command Center — the growth, marketing & AI automation hub for project management, team collaboration, and lead activity tracking. You help users manage projects, teams, customers, and analytics. Be concise, helpful, and professional. Keep responses under 200 words unless asked for detailed analysis.${safeContext}`;
@@ -178,7 +187,7 @@ export async function POST(request: NextRequest) {
     if (Array.isArray(history) && history.length > 0) {
       const recentHistory = history.slice(-8)
       for (const msg of recentHistory) {
-        if (msg && typeof msg.role === 'string' && typeof msg.content === 'string') {
+        if (msg && typeof msg.role === 'string' && typeof msg.content === 'string' && msg.content.length <= 2000) {
           userMessages.push({ role: msg.role, content: msg.content })
         }
       }

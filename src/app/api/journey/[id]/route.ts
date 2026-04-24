@@ -96,6 +96,10 @@ export async function DELETE(
 
   try {
     const { id } = await params
+    const existing = await db.clientJourney.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
+    }
     await db.clientJourney.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {

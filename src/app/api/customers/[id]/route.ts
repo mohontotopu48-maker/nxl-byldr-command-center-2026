@@ -96,6 +96,13 @@ export async function PUT(
       )
     }
 
+    if (revenue !== undefined && typeof revenue !== 'number') {
+      return NextResponse.json(
+        { error: 'Revenue must be a number' },
+        { status: 400 }
+      )
+    }
+
     const customer = await db.customer.update({
       where: { id },
       select: {

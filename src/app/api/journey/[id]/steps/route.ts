@@ -106,6 +106,10 @@ export async function POST(
       return NextResponse.json({ error: 'updates array required' }, { status: 400 })
     }
 
+    if (updates.length > 50) {
+      return NextResponse.json({ error: 'Maximum 50 updates per request' }, { status: 400 })
+    }
+
     const validStatuses = ['pending', 'in_progress', 'completed']
     const results: ClientSetupStep[] = []
     for (const { stepId, status } of updates) {

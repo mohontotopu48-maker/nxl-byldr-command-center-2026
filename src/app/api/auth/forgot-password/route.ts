@@ -53,14 +53,14 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        if (process.env.NODE_ENV !== 'production') {
-          console.log(`[OTP] Password reset OTP for ${normalizedEmail}: ${otp}`)
+        // OTP is only logged server-side for development debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[OTP-DEV] Password reset OTP for ${normalizedEmail}: ${otp}`)
         }
 
         return NextResponse.json({
           success: true,
           message: 'OTP sent to your email address',
-          otp: process.env.NODE_ENV !== 'production' ? otp : undefined,
         })
       } catch (dbError) {
         console.error('DB OTP storage failed, falling back to in-memory:', dbError)
@@ -71,14 +71,13 @@ export async function POST(request: NextRequest) {
     // ═══ IN-MEMORY FALLBACK (when DATABASE_URL is not configured) ═══
     storeInMemoryOtp(normalizedEmail, otp)
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[OTP] Password reset OTP for ${normalizedEmail}: ${otp}`)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[OTP-DEV] Password reset OTP for ${normalizedEmail}: ${otp}`)
     }
 
     return NextResponse.json({
       success: true,
       message: 'OTP sent to your email address',
-      otp: process.env.NODE_ENV !== 'production' ? otp : undefined,
     })
   } catch (error) {
     console.error('Forgot password error:', error)

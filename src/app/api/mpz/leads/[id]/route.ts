@@ -82,6 +82,10 @@ export async function DELETE(
 
   try {
     const { id } = await params
+    const existing = await db.mpzLead.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+    }
     await db.mpzLead.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {

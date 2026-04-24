@@ -2,17 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
 
-// GET /api/alert-bar — return current alert status
-export async function GET() {
+// GET /api/alert-bar — return current alert status (auth required)
+export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     let alert = await db.alertBar.findFirst({ orderBy: { createdAt: 'desc' } })
-    
+
     if (!alert) {
       alert = await db.alertBar.create({
         data: { active: false, message: 'All Systems Go — Machine is on Schedule.' },
       })
     }
-    
+
     return NextResponse.json({ active: alert.active, message: alert.message })
   } catch (error) {
     console.error('Alert bar error:', error)
@@ -27,17 +30,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const { active, message } = await request.json()
-    
-    // Update all existing alerts to inactive, then create/update
+
+    // Validate inputs
+    if (message && typeof message === 'string' && message.length > 500) {
+      return NextResponse.json({ error: 'Message too long (max 500 characters)' }, { status: 400 })
+    }
+
     await db.alertBar.deleteMany({})
-    
+
     const alert = await db.alertBar.create({
       data: {
         active: active ?? false,
         message: message || 'All Systems Go — Machine is on Schedule.',
       },
     })
-    
+
     return NextResponse.json({ active: alert.active, message: alert.message })
   } catch (error) {
     console.error('Alert bar update error:', error)

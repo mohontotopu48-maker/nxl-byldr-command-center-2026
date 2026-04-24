@@ -4,12 +4,6 @@ import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 import { isDbAvailable, db } from '@/lib/db'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
-// Master admin bcrypt hashes (fallback when DATABASE_URL is not set)
-const MASTER_ADMIN_HASHES: Record<string, string> = {
-  'info.vsualdm@gmail.com': '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi',
-  'geovsualdm@gmail.com': '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi',
-}
-
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request)
@@ -31,9 +25,10 @@ export async function POST(request: Request) {
 
     // ═══ MASTER ADMIN FALLBACK (works even without DATABASE_URL) ═══
     if (MASTER_ADMIN_EMAILS.includes(normalizedEmail as typeof MASTER_ADMIN_EMAILS[number])) {
-      const storedHash = MASTER_ADMIN_HASHES[normalizedEmail]
+      const storedHash = process.env.MASTER_ADMIN_PASSWORD_HASH
+        || (process.env.NODE_ENV === 'production' ? null : '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi')
       if (!storedHash) {
-        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+        return NextResponse.json({ error: 'Service unavailable. Contact administrator.' }, { status: 503 })
       }
       const isValid = await compare(password, storedHash)
       if (!isValid) {

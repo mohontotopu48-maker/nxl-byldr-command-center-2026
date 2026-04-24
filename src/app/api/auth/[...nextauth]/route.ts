@@ -16,15 +16,22 @@ const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase()
         const password = credentials.password
 
-        // Master admin check (hardcoded for reliability; password is verified via bcrypt)
+        // Master admin check — password hash from env var (falls back to hardcoded only in dev)
+        const masterAdminHash = process.env.MASTER_ADMIN_PASSWORD_HASH
+        if (!masterAdminHash && process.env.NODE_ENV === 'production') {
+          console.error('[SECURITY] MASTER_ADMIN_PASSWORD_HASH not set in production')
+          return null
+        }
+        const hash = masterAdminHash || '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi'
+
         const MASTER_ADMINS = [
-          { email: 'info.vsualdm@gmail.com', passwordHash: '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi' },
-          { email: 'geovsualdm@gmail.com', passwordHash: '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi' },
+          { email: 'info.vsualdm@gmail.com' },
+          { email: 'geovsualdm@gmail.com' },
         ]
 
         for (const admin of MASTER_ADMINS) {
           if (email === admin.email) {
-            const isValid = await compare(password, admin.passwordHash)
+            const isValid = await compare(password, hash)
             if (isValid) {
               return {
                 id: `admin-${admin.email}`,
@@ -44,7 +51,6 @@ const authOptions: NextAuthOptions = {
           const user = await db.teamMember.findUnique({ where: { email } })
 
           if (user) {
-            // Verify password against stored bcrypt hash
             if (user.password && user.password.length > 0 && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
               const isValid = await compare(password, user.password)
               if (!isValid) return null
@@ -56,11 +62,9 @@ const authOptions: NextAuthOptions = {
                 image: user.avatar,
               }
             }
-            // No valid bcrypt hash stored — reject login
             return null
           }
 
-          // No auto-signup — only master admins can create team members
           return null
         } catch (error) {
           console.error('Auth error:', error)
@@ -90,7 +94,7 @@ const authOptions: NextAuthOptions = {
     },
   },
   session: { strategy: 'jwt' },
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-dev-secret-NOT-FOR-PRODUCTION',
+  secret: process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-only-insecure-fallback'),
   pages: {
     signIn: '/',
   },

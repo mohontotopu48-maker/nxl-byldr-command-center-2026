@@ -1,8 +1,24 @@
 import { SignJWT, jwtVerify } from 'jose'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-dev-secret-NOT-FOR-PRODUCTION'
-)
+function getSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET or NEXTAUTH_SECRET must be set in production')
+    }
+    return new TextEncoder().encode('dev-only-insecure-fallback')
+  }
+  return new TextEncoder().encode(secret)
+}
+
+// Lazy singleton — avoids throwing during build/static generation
+let _jwtSecret: Uint8Array | null = null
+function getJWTSecret(): Uint8Array {
+  if (!_jwtSecret) {
+    _jwtSecret = getSecret()
+  }
+  return _jwtSecret
+}
 
 export interface JwtPayload {
   email: string
@@ -20,7 +36,7 @@ export async function signToken(payload: JwtPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(JWT_SECRET)
+    .sign(getJWTSecret())
 }
 
 /**
@@ -28,7 +44,7 @@ export async function signToken(payload: JwtPayload): Promise<string> {
  */
 export async function verifyToken(token: string): Promise<JwtPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJWTSecret())
     return payload as unknown as JwtPayload
   } catch {
     return null

@@ -150,6 +150,10 @@ export function TeamView() {
       toast.error('Name and email are required')
       return
     }
+    if (!/\S+@\S+\.\S+/.test(formEmail.trim())) {
+      toast.error('Please enter a valid email address')
+      return
+    }
 
     setSubmitting(true)
     try {

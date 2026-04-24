@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
-// GET /api/setup-steps — return all 13 steps ordered by stepNumber
-export async function GET() {
+// GET /api/setup-steps — return all 13 steps ordered by stepNumber (auth required)
+export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const steps = await db.setupStep.findMany({ orderBy: { stepNumber: 'asc' } })
-    
+
     // If no steps exist, initialize the default 13 steps
     if (steps.length === 0) {
       const defaults = [
@@ -24,7 +28,7 @@ export async function GET() {
         { stepNumber: 12, title: 'Ad Campaigns Launched', phase: 'launch', status: 'pending' },
         { stepNumber: 13, title: 'Lead Machine Running', phase: 'launch', status: 'pending' },
       ] as Array<{ stepNumber: number; title: string; phase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'; status: string }>
-      
+
       try {
         await db.setupStep.createMany({ data: defaults, skipDuplicates: true })
       } catch {
@@ -46,9 +50,18 @@ export async function POST(request: NextRequest) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
 
+  const ip = getClientIp(request)
+  const rl = rateLimit(`setup-steps:${ip}`, { limit: 30, windowMs: 60000 })
+  if (!rl.success) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+    })
+  }
+
   try {
     const { stepId, status } = await request.json()
-    
+
     if (!stepId || !status) {
       return NextResponse.json({ error: 'stepId and status required' }, { status: 400 })
     }

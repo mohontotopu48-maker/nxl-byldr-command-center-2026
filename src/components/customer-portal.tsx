@@ -423,7 +423,7 @@ function DashboardTab({ auth }: { auth: { name: string; email: string; role: str
         setAlertData(data)
       }
     } catch {
-      /* empty */
+      toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
@@ -688,7 +688,7 @@ function MyJourneyTab({ auth }: { auth: { name: string; email: string; role: str
         }
       }
     } catch {
-      /* empty */
+      toast.error('Failed to load journey data')
     } finally {
       setLoading(false)
     }
@@ -973,7 +973,7 @@ function ContactUsTab({ auth, onSwitchToProfile }: { auth: { name: string; email
         setMessages(Array.isArray(data) ? data : [])
       }
     } catch {
-      /* empty */
+      toast.error('Failed to load messages')
     } finally {
       setLoadingMessages(false)
     }

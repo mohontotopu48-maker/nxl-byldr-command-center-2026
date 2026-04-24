@@ -39,9 +39,19 @@ async function buildBearerToken(auth: AuthData): Promise<string> {
     cachedTokenEmail = email
     return token
   } catch {
-    // Fallback to base64 if JWT signing fails (shouldn't happen)
-    return `Bearer ${btoa(JSON.stringify({ email, role: auth.role || 'member', loggedIn: true }))}`
+    // If JWT signing fails, the token cannot be created — return empty to trigger re-login
+    cachedToken = null
+    cachedTokenEmail = null
+    return ''
   }
+}
+
+/**
+ * Invalidate the cached JWT token. Call this on logout.
+ */
+export function invalidateTokenCache(): void {
+  cachedToken = null
+  cachedTokenEmail = null
 }
 
 /**
@@ -58,7 +68,9 @@ export async function apiFetch(
   // Set auth header if user is logged in
   if (auth?.loggedIn) {
     const token = await buildBearerToken(auth)
-    headers.set('Authorization', `Bearer ${token}`)
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
   }
 
   // Set content-type for JSON bodies if not already set
@@ -82,4 +94,11 @@ export function isMasterAdmin(): boolean {
     auth.role === 'master_admin' ||
     (auth.email ? MASTER_ADMIN_EMAILS.includes(auth.email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) : false)
   )
+}
+
+/**
+ * Get the stored auth data from localStorage.
+ */
+export function getAuth(): AuthData | null {
+  return getStoredAuth()
 }

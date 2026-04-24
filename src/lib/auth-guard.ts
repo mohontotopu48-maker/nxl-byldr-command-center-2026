@@ -1,12 +1,13 @@
 /**
  * Authentication guard utility for API routes.
- * Validates signed JWT tokens — NOT base64-encoded plaintext.
+ * Validates signed JWT tokens only — base64 fallback has been REMOVED for security.
  * Supports fallback auth for hardcoded admins and in-memory customers when DB is unavailable.
  */
 import { NextResponse } from 'next/server'
 import { db, isDbAvailable } from '@/lib/db'
 import { isFallbackCustomer } from '@/lib/customer-store'
 import { verifyToken } from '@/lib/jwt'
+import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 export interface AuthResult {
   authorized: true
@@ -19,16 +20,9 @@ export interface UnauthorizedResult {
   response: NextResponse
 }
 
-// Master admin emails — server-side only, never trust client claims
-const MASTER_ADMIN_EMAILS = [
-  'info.vsualdm@gmail.com',
-  'geovsualdm@gmail.com',
-]
-
 /**
- * Check if the current request has a valid auth token.
- * First tries JWT verification. Falls back to base64 for backwards compatibility
- * during the migration period, but always validates role against the database.
+ * Check if the current request has a valid signed JWT token.
+ * Rejects unsigned/base64 tokens. Always validates role against the database.
  *
  * Usage in API routes:
  *   const auth = await checkRequestAuth(request)
@@ -51,10 +45,9 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
   let email: string
   let clientRole: string
 
-  // Try JWT verification first
   const token = authHeader.slice(7)
 
-  // Check if token looks like a JWT (three base64url segments separated by dots)
+  // Only accept properly signed JWT tokens (three base64url segments separated by dots)
   if (token.split('.').length === 3) {
     const payload = await verifyToken(token)
     if (!payload || !payload.email || !payload.loggedIn) {
@@ -66,27 +59,18 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
     email = payload.email.toLowerCase().trim()
     clientRole = payload.role || 'member'
   } else {
-    // Backwards-compatible base64 fallback (will be removed after full migration)
-    try {
-      const payload = JSON.parse(atob(token))
-      if (!payload.email || !payload.loggedIn) {
-        return {
-          authorized: false,
-          response: NextResponse.json({ error: 'Invalid token' }, { status: 401 }),
-        }
-      }
-      email = String(payload.email).toLowerCase().trim()
-      clientRole = String(payload.role || 'member')
-    } catch {
-      return {
-        authorized: false,
-        response: NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 }),
-      }
+    // Base64 tokens are NO LONGER accepted — require signed JWT only
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Legacy token format no longer supported. Please log in again.' },
+        { status: 401 }
+      ),
     }
   }
 
   // Master admin bypass — always valid, no DB needed
-  if (MASTER_ADMIN_EMAILS.includes(email)) {
+  if (MASTER_ADMIN_EMAILS.includes(email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number])) {
     return {
       authorized: true,
       email,
@@ -105,7 +89,6 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
 
   // Validate email against the database
   if (!isDbAvailable()) {
-    // DB not available and not a recognized fallback user
     return {
       authorized: false,
       response: NextResponse.json(
@@ -141,7 +124,9 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
     }
 
     // Use the DATABASE role, never trust client-provided role
-    const effectiveRole = MASTER_ADMIN_EMAILS.includes(email) ? 'master_admin' : user.role
+    const effectiveRole = MASTER_ADMIN_EMAILS.includes(user.email.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number])
+      ? 'master_admin'
+      : user.role
 
     return {
       authorized: true,
@@ -159,7 +144,6 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
 
 /**
  * Check if the authenticated user is a master admin.
- * Validates against DB, then checks master admin emails server-side.
  */
 export async function requireMasterAdmin(request: Request): Promise<AuthResult | UnauthorizedResult> {
   const auth = await checkRequestAuth(request)
@@ -176,78 +160,4 @@ export async function requireMasterAdmin(request: Request): Promise<AuthResult |
   }
 
   return auth
-}
-
-/**
- * Lightweight sync auth check — validates token format and known fallbacks without DB lookup.
- * Master admins are always trusted. In-memory customers are recognized.
- *
- * IMPORTANT: Role is NEVER trusted from the client token. For non-master-admin users,
- * role always defaults to 'member'. This makes checkRequestAuthSync safe even with
- * forgeable base64 tokens — sensitive operations should use checkRequestAuth (async) instead.
- */
-export function checkRequestAuthSync(request: Request): AuthResult | UnauthorizedResult {
-  const authHeader = request.headers.get('authorization')
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return {
-      authorized: false,
-      response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }),
-    }
-  }
-
-  try {
-    const token = authHeader.slice(7)
-
-    let email: string
-
-    // Try JWT format first (three dot-separated segments)
-    if (token.split('.').length === 3) {
-      // JWT requires async verification — for sync path we can only check format.
-      // Extract email from the payload segment without full verification.
-      try {
-        const payloadB64 = token.split('.')[1]
-        // base64url decode: replace - with +, _ with /
-        const padded = payloadB64.replace(/-/g, '+').replace(/_/g, '/')
-        const paddedStr = padded + '='.repeat((4 - padded.length % 4) % 4)
-        const payload = JSON.parse(atob(paddedStr))
-        if (!payload.email || !payload.loggedIn) {
-          return {
-            authorized: false,
-            response: NextResponse.json({ error: 'Invalid token' }, { status: 401 }),
-          }
-        }
-        email = String(payload.email).toLowerCase().trim()
-      } catch {
-        return {
-          authorized: false,
-          response: NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 }),
-        }
-      }
-    } else {
-      // Base64 fallback
-      const payload = JSON.parse(atob(token))
-      if (!payload.email || !payload.loggedIn) {
-        return {
-          authorized: false,
-          response: NextResponse.json({ error: 'Invalid token' }, { status: 401 }),
-        }
-      }
-      email = String(payload.email).toLowerCase().trim()
-    }
-
-    // NEVER trust role from client — always derive from server-side knowledge
-    const role = MASTER_ADMIN_EMAILS.includes(email) ? 'master_admin' : 'member'
-
-    return {
-      authorized: true,
-      email,
-      role,
-    }
-  } catch {
-    return {
-      authorized: false,
-      response: NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 }),
-    }
-  }
 }

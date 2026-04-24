@@ -229,7 +229,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
     setForgotLoading(true)
     try {
       const res = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: forgotEmail }) })
-      if (res.ok) { const data = await res.json(); toast.success(data.message || 'OTP sent!'); setForgotStep('otp'); if (data.otp && process.env.NODE_ENV === 'development') toast.info(`Dev OTP: ${data.otp}`, { duration: 10000 }) }
+      if (res.ok) { const data = await res.json(); toast.success(data.message || 'OTP sent!'); setForgotStep('otp') }
       else { const data = await res.json().catch(() => ({})); toast.error(data.error || 'Failed.') }
     } catch { toast.error('Failed.') } finally { setForgotLoading(false) }
   }

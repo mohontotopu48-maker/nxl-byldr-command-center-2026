@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Search, Bell, Moon, Sun } from 'lucide-react'
+import { invalidateTokenCache } from '@/lib/api-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -134,7 +135,6 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
               className="relative h-9 gap-2 rounded-full pl-1 pr-3 hover:bg-accent"
             >
               <Avatar className="h-7 w-7">
-                {userName ? <AvatarImage src={undefined} alt="User" /> : null}
                 <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
                   {initials}
                 </AvatarFallback>
@@ -174,6 +174,7 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
               className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
               onClick={() => {
                 localStorage.removeItem('vsual_auth')
+                invalidateTokenCache()
                 onLogout?.()
               }}
             >

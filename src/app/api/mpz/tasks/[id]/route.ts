@@ -39,6 +39,30 @@ export async function PUT(
     const body = await request.json()
     const { title, description, status, priority, assignedTo, leadId, dueDate } = body
 
+    // Validate status if provided
+    const validStatuses = ['pending', 'in_progress', 'completed', 'blocked']
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    // Validate priority if provided
+    const validPriorities = ['low', 'medium', 'high', 'critical']
+    if (priority !== undefined && !validPriorities.includes(priority)) {
+      return NextResponse.json(
+        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    // Check existence before update
+    const existingTask = await db.mpzTask.findUnique({ where: { id } })
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+    }
+
     const task = await db.mpzTask.update({
       where: { id },
       data: {
@@ -69,6 +93,10 @@ export async function DELETE(
 
   try {
     const { id } = await params
+    const existing = await db.mpzTask.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+    }
     await db.mpzTask.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -47,6 +47,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const validStatuses = ['pending', 'in_progress', 'completed', 'blocked']
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    const validPriorities = ['low', 'medium', 'high', 'critical']
+    if (priority !== undefined && !validPriorities.includes(priority)) {
+      return NextResponse.json(
+        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
     const task = await db.mpzTask.create({
       data: {
         title,

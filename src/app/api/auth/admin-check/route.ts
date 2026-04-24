@@ -1,24 +1,17 @@
-import { getServerSession } from 'next-auth'
-import { NextResponse } from 'next/server'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
+import { NextRequest, NextResponse } from 'next/server'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
-      return NextResponse.json({ isAdmin: false, error: 'Not authenticated' }, { status: 401 })
+    const auth = await checkRequestAuth(request)
+    if (!auth.authorized) {
+      return NextResponse.json({ isAdmin: false, error: 'Not authenticated' }, { status: auth.response.status })
     }
 
-    const user = session.user as Record<string, unknown>
-    const email = (user.email as string)?.toLowerCase()
-    const role = user.role as string
-    const isMasterAdmin = MASTER_ADMIN_EMAILS.includes(email as typeof MASTER_ADMIN_EMAILS[number]) || role === 'master_admin'
-
     return NextResponse.json({
-      isAdmin: isMasterAdmin,
-      role,
-      email,
+      isAdmin: auth.role === 'master_admin',
+      role: auth.role,
+      email: auth.email,
     })
   } catch (error) {
     console.error('Admin check error:', error)
