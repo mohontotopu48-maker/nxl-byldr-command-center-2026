@@ -261,7 +261,7 @@ export function CustomerPortal({ auth, onLogout }: CustomerPortalProps) {
           </div>
 
           {/* Center: Nav Tabs */}
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-none">
             {TABS.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
@@ -270,7 +270,7 @@ export function CustomerPortal({ auth, onLogout }: CustomerPortalProps) {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                    'relative flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all whitespace-nowrap shrink-0',
                     isActive
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'

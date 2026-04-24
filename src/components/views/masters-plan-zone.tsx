@@ -65,31 +65,31 @@ export function MastersPlanZone() {
     <div className="min-h-full">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 md:px-6 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-primary/20">
               <Zap className="h-4 w-4 text-primary" />
             </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-wide">Masters Plan Zone</h1>
-              <p className="text-[11px] text-muted-foreground">Lead Management & Automation</p>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold tracking-wide truncate">Masters Plan Zone</h1>
+              <p className="text-[11px] text-muted-foreground hidden sm:block">Lead Management & Automation</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs"
+              className="gap-1 sm:gap-1.5 text-xs hidden sm:flex"
               onClick={handleSeed}
             >
               <Sprout className="h-3.5 w-3.5" /> Seed Data
             </Button>
             <Button
               size="sm"
-              className="gap-1.5 text-xs"
+              className="gap-1 sm:gap-1.5 text-xs"
               onClick={() => setNewLeadOpen(true)}
             >
-              <Plus className="h-3.5 w-3.5" /> New Lead
+              <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">New Lead</span>
             </Button>
           </div>
         </div>

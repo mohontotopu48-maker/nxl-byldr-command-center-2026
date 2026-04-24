@@ -153,7 +153,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
                             {/* Advance button */}
                             {nextStage && (
                               <button
-                                className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[10px] py-1 rounded-b-lg opacity-0 hover:opacity-100 transition-opacity"
+                                className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[10px] py-1 rounded-b-lg sm:opacity-0 sm:hover:opacity-100 transition-opacity"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   handleMoveLead(lead, nextStage)

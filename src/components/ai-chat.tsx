@@ -101,7 +101,7 @@ export function AiChat() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-shadow hover:shadow-xl hover:shadow-primary/40"
+            className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-shadow hover:shadow-xl hover:shadow-primary/40"
             aria-label="Open AI Chat"
           >
             <Sparkles className="h-6 w-6" />
@@ -117,8 +117,7 @@ export function AiChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-6 right-6 z-50 flex flex-col rounded-2xl border border-border bg-card shadow-2xl shadow-black/40 overflow-hidden"
-            style={{ width: '340px', height: '440px' }}
+            className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50 flex flex-col rounded-2xl border border-border bg-card shadow-2xl shadow-black/40 overflow-hidden sm:w-[340px] sm:h-[440px] h-[calc(100dvh-6rem)] max-h-[560px]"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">

@@ -122,7 +122,7 @@ export function MpzLeads({ onSelectLead, refreshTrigger }: MpzLeadsProps) {
         </div>
 
         <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full sm:w-[160px]">
             <Filter className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
@@ -135,7 +135,7 @@ export function MpzLeads({ onSelectLead, refreshTrigger }: MpzLeadsProps) {
         </Select>
 
         <Select value={serviceFilter} onValueChange={setServiceFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Service" />
           </SelectTrigger>
           <SelectContent>

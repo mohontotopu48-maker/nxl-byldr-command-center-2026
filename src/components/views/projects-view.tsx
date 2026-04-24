@@ -356,7 +356,7 @@ export function ProjectsView() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent"
+                            className="h-8 w-8 shrink-0 text-muted-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-accent"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>

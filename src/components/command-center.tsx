@@ -61,7 +61,7 @@ export function CommandCenter({ onLogout }: CommandCenterProps) {
   const ActiveComponent = viewComponents[activeView]
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen h-[100dvh] overflow-hidden bg-background">
       {/* Sidebar */}
       <SidebarNav
         activeView={activeView}

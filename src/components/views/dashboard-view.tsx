@@ -664,13 +664,13 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
                 {pct}% Complete
               </Badge>
             </div>
-            <div className="flex gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 sm:flex sm:gap-1.5">
               {PHASES.map((phase, i) => {
                 const { done, total } = getPhaseProgress(steps, phase.id)
                 const isActive = phase.id === journey.currentPhase
                 const isComplete = total > 0 && done === total
                 return (
-                  <div key={phase.id} className={`flex-1 rounded-lg p-2.5 border transition-all ${
+                  <div key={phase.id} className={`rounded-lg p-2.5 border transition-all ${
                     isComplete ? 'border-primary/30 bg-primary/5' : isActive ? 'border-amber-400/40 bg-amber-400/5' : 'border-border bg-muted/30'
                   }`}>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">{phase.label}</p>
@@ -759,7 +759,7 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
             <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />AI Automation
             </h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button
                 variant="outline"
                 size="sm"
