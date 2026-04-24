@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { shouldUseMemory, memJourneys } from '@/lib/in-memory-store'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/journey/[id]/automate — AI-powered automation for a client journey
@@ -28,6 +29,15 @@ export async function POST(
 
     if (!action) {
       return NextResponse.json({ error: 'action is required' }, { status: 400 })
+    }
+
+    if (shouldUseMemory()) {
+      const journey = memJourneys.findById(journeyId)
+      if (!journey) {
+        return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
+      }
+      const log = memJourneys.addAutomationLog(journeyId, `AI automation: ${action}`, 'In-memory AI automation', 'ai')
+      return NextResponse.json({ response: `AI automation action '${action}' executed (in-memory mode).`, log })
     }
 
     const zai = await ZAI.create()

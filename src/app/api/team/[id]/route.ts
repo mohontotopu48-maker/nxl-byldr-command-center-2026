@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memTeam } from '@/lib/in-memory-store'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,17 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const member = memTeam.findById(id)
+      if (!member) {
+        return NextResponse.json(
+          { error: 'Team member not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(member)
+    }
 
     const member = await db.teamMember.findUnique({
       where: { id },
@@ -66,32 +78,12 @@ export async function PUT(
     const body = await request.json()
     const { name, email, role, avatar, status } = body
 
-    const existingMember = await db.teamMember.findUnique({ where: { id } })
-    if (!existingMember) {
-      return NextResponse.json(
-        { error: 'Team member not found' },
-        { status: 404 }
-      )
-    }
-
+    // Validate inputs
     if (email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(email)) {
         return NextResponse.json(
           { error: 'Invalid email format' },
-          { status: 400 }
-        )
-      }
-
-      const duplicateEmail = await db.teamMember.findFirst({
-        where: {
-          email: email.trim().toLowerCase(),
-          NOT: { id },
-        },
-      })
-      if (duplicateEmail) {
-        return NextResponse.json(
-          { error: 'A team member with this email already exists' },
           { status: 400 }
         )
       }
@@ -112,6 +104,54 @@ export async function PUT(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
       )
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      // Check existence
+      const existing = memTeam.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Team member not found' }, { status: 404 })
+      }
+      // Check duplicate email
+      if (email) {
+        const dup = memTeam.findByEmail(email.trim().toLowerCase())
+        if (dup && dup.id !== id) {
+          return NextResponse.json({ error: 'A team member with this email already exists' }, { status: 400 })
+        }
+      }
+      const updateData: Record<string, unknown> = {}
+      if (name !== undefined) updateData.name = name.trim()
+      if (email !== undefined) updateData.email = email.trim().toLowerCase()
+      if (role !== undefined) updateData.role = role
+      if (avatar !== undefined) updateData.avatar = avatar ?? null
+      if (status !== undefined) updateData.status = status
+      const member = memTeam.update(id, updateData)
+      return NextResponse.json(member)
+    }
+
+    // DB path
+    const existingMember = await db.teamMember.findUnique({ where: { id } })
+    if (!existingMember) {
+      return NextResponse.json(
+        { error: 'Team member not found' },
+        { status: 404 }
+      )
+    }
+
+    if (email) {
+      const duplicateEmail = await db.teamMember.findFirst({
+        where: {
+          email: email.trim().toLowerCase(),
+          NOT: { id },
+        },
+      })
+      if (duplicateEmail) {
+        return NextResponse.json(
+          { error: 'A team member with this email already exists' },
+          { status: 400 }
+        )
+      }
     }
 
     const member = await db.teamMember.update({
@@ -144,6 +184,16 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memTeam.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Team member not found' }, { status: 404 })
+      }
+      memTeam.delete(id)
+      return NextResponse.json({ message: 'Team member deleted successfully' })
+    }
 
     const existingMember = await db.teamMember.findUnique({ where: { id } })
     if (!existingMember) {

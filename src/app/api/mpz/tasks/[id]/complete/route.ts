@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzTasks, memMpzActivities } from '@/lib/in-memory-store'
 
 export async function PUT(
   request: NextRequest,
@@ -11,6 +12,22 @@ export async function PUT(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const currentTask = memMpzTasks.findById(id)
+      if (!currentTask) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+      const ct = currentTask as Record<string, unknown>
+      const leadContext = ct.lead ? ` for ${ct.lead}` : ''
+      memMpzActivities.create({
+        type: 'task_completed',
+        message: `Task "${ct.title}" completed by ${ct.assignedTo}${leadContext}`,
+        leadId: ct.leadId as string,
+      })
+      const task = memMpzTasks.complete(id)
+      return NextResponse.json(task)
+    }
 
     const currentTask = await db.mpzTask.findUnique({
       where: { id },

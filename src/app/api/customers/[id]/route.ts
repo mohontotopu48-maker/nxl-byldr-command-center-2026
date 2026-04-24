@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memCustomers } from '@/lib/in-memory-store'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,17 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const customer = memCustomers.findById(id)
+      if (!customer) {
+        return NextResponse.json(
+          { error: 'Customer not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(customer)
+    }
 
     const customer = await db.customer.findUnique({
       where: { id },
@@ -49,32 +61,12 @@ export async function PUT(
     const body = await request.json()
     const { name, email, company, phone, status, plan, revenue, notes } = body
 
-    const existingCustomer = await db.customer.findUnique({ where: { id } })
-    if (!existingCustomer) {
-      return NextResponse.json(
-        { error: 'Customer not found' },
-        { status: 404 }
-      )
-    }
-
+    // Validate inputs
     if (email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(email)) {
         return NextResponse.json(
           { error: 'Invalid email format' },
-          { status: 400 }
-        )
-      }
-
-      const duplicateEmail = await db.customer.findFirst({
-        where: {
-          email: email.trim().toLowerCase(),
-          NOT: { id },
-        },
-      })
-      if (duplicateEmail) {
-        return NextResponse.json(
-          { error: 'A customer with this email already exists' },
           { status: 400 }
         )
       }
@@ -101,6 +93,56 @@ export async function PUT(
         { error: 'Revenue must be a number' },
         { status: 400 }
       )
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memCustomers.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      }
+      // Check duplicate email
+      if (email) {
+        const dup = memCustomers.findByEmail(email.trim().toLowerCase())
+        if (dup && dup.id !== id) {
+          return NextResponse.json({ error: 'A customer with this email already exists' }, { status: 400 })
+        }
+      }
+      const updateData: Record<string, unknown> = {}
+      if (name !== undefined) updateData.name = name.trim()
+      if (email !== undefined) updateData.email = email.trim().toLowerCase()
+      if (company !== undefined) updateData.company = company ?? null
+      if (phone !== undefined) updateData.phone = phone ?? null
+      if (status !== undefined) updateData.status = status
+      if (plan !== undefined) updateData.plan = plan
+      if (revenue !== undefined) updateData.revenue = revenue
+      if (notes !== undefined) updateData.notes = notes ?? null
+      const customer = memCustomers.update(id, updateData)
+      return NextResponse.json(customer)
+    }
+
+    // DB path
+    const existingCustomer = await db.customer.findUnique({ where: { id } })
+    if (!existingCustomer) {
+      return NextResponse.json(
+        { error: 'Customer not found' },
+        { status: 404 }
+      )
+    }
+
+    if (email) {
+      const duplicateEmail = await db.customer.findFirst({
+        where: {
+          email: email.trim().toLowerCase(),
+          NOT: { id },
+        },
+      })
+      if (duplicateEmail) {
+        return NextResponse.json(
+          { error: 'A customer with this email already exists' },
+          { status: 400 }
+        )
+      }
     }
 
     const customer = await db.customer.update({
@@ -140,6 +182,16 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memCustomers.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      }
+      memCustomers.delete(id)
+      return NextResponse.json({ message: 'Customer deleted successfully' })
+    }
 
     const existingCustomer = await db.customer.findUnique({ where: { id } })
     if (!existingCustomer) {

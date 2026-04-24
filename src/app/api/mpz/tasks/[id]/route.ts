@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzTasks } from '@/lib/in-memory-store'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,15 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const task = memMpzTasks.findById(id)
+      if (!task) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+      return NextResponse.json(task)
+    }
+
     const task = await db.mpzTask.findUnique({
       where: { id },
       include: { lead: true },
@@ -57,7 +67,25 @@ export async function PUT(
       )
     }
 
-    // Check existence before update
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memMpzTasks.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+      const updateData: Record<string, unknown> = {}
+      if (title !== undefined) updateData.title = title
+      if (description !== undefined) updateData.description = description
+      if (status !== undefined) updateData.status = status
+      if (priority !== undefined) updateData.priority = priority
+      if (assignedTo !== undefined) updateData.assignedTo = assignedTo
+      if (leadId !== undefined) updateData.leadId = leadId
+      if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate).toISOString() : null
+      const task = memMpzTasks.update(id, updateData)
+      return NextResponse.json(task)
+    }
+
+    // DB path
     const existingTask = await db.mpzTask.findUnique({ where: { id } })
     if (!existingTask) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
@@ -93,6 +121,17 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memMpzTasks.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+      memMpzTasks.delete(id)
+      return NextResponse.json({ success: true })
+    }
+
     const existing = await db.mpzTask.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })

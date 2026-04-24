@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memProjects } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -10,6 +11,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const { data, total } = memProjects.getAll(skip, limit)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, projects] = await Promise.all([
       db.project.count(),
@@ -67,6 +76,11 @@ export async function POST(request: NextRequest) {
         { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
         { status: 400 }
       )
+    }
+
+    if (shouldUseMemory()) {
+      const project = memProjects.create({ name, description, status, priority, startDate, endDate })
+      return NextResponse.json(project, { status: 201 })
     }
 
     const project = await db.project.create({

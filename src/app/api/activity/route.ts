@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memActivities } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -11,6 +12,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const activities = memActivities.getAll(limit)
+      return NextResponse.json({
+        data: activities,
+        pagination: { page, limit, total: activities.length, totalPages: Math.ceil(activities.length / limit) },
+      })
+    }
 
     const [total, activities] = await Promise.all([
       db.activity.count(),
@@ -54,6 +63,11 @@ export async function POST(request: NextRequest) {
         { error: 'Activity message is required' },
         { status: 400 }
       )
+    }
+
+    if (shouldUseMemory()) {
+      const activity = memActivities.create({ type, message, userId, metadata })
+      return NextResponse.json(activity, { status: 201 })
     }
 
     const activity = await db.activity.create({

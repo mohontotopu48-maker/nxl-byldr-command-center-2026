@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memCustomers } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -12,6 +13,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const { data, total } = memCustomers.getAll(skip, limit)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, customers] = await Promise.all([
       db.customer.count(),
@@ -69,6 +78,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const validPlans = ['free', 'pro', 'enterprise']
+    const validStatuses = ['active', 'inactive']
+
+    if (shouldUseMemory()) {
+      try {
+        const rawPassword = password || ('customer_' + Math.random().toString(36).slice(2, 10))
+        const customer = memCustomers.create({
+          name, email,
+          password: rawPassword,
+          company: company || undefined,
+          phone: phone || undefined,
+          plan: (validPlans.includes(plan) ? plan : 'free'),
+          status: (validStatuses.includes(status) ? status : 'active'),
+        })
+        return NextResponse.json(customer, { status: 201 })
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message.includes('already exists')) {
+          return NextResponse.json(
+            { error: 'A customer with this email already exists' },
+            { status: 400 }
+          )
+        }
+        throw err
+      }
+    }
+
     const existing = await db.customer.findUnique({ where: { email: email.trim().toLowerCase() } })
     if (existing) {
       return NextResponse.json(
@@ -76,9 +111,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const validPlans = ['free', 'pro', 'enterprise']
-    const validStatuses = ['active', 'inactive']
 
     // Hash the password (use provided or generate a random one)
     const rawPassword = password || ('customer_' + Math.random().toString(36).slice(2, 10))

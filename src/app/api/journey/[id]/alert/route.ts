@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memJourneys } from '@/lib/in-memory-store'
 
 // GET /api/journey/[id]/alert — get current alert for a journey
 export async function GET(
@@ -12,6 +13,20 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const journey = memJourneys.findById(id)
+      if (!journey) {
+        return NextResponse.json({ active: false, message: 'All Systems Go — Project on Schedule.' })
+      }
+      const alerts = journey.alerts as Array<Record<string, unknown>>
+      if (!alerts || alerts.length === 0) {
+        return NextResponse.json({ active: false, message: 'All Systems Go — Project on Schedule.' })
+      }
+      const alert = alerts[0]
+      return NextResponse.json({ id: alert.id, active: alert.active, message: alert.message, priority: alert.priority })
+    }
+
     const alert = await db.clientAlert.findFirst({
       where: { journeyId: id },
       orderBy: { createdAt: 'desc' },
@@ -49,6 +64,11 @@ export async function POST(
     }
     const validPriorities = ['low', 'normal', 'medium', 'high', 'urgent']
     const validPriority = priority && validPriorities.includes(priority) ? priority : 'normal'
+
+    if (shouldUseMemory()) {
+      const alert = memJourneys.updateAlert(journeyId, { active: active ?? false, message: message || 'All Systems Go — Project on Schedule.', priority: validPriority })
+      return NextResponse.json(alert)
+    }
 
     // Atomic: delete old + create new + log
     const alert = await db.$transaction(async (tx) => {

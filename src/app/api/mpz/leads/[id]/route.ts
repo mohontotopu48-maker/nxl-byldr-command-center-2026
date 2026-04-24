@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzLeads } from '@/lib/in-memory-store'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,15 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const lead = memMpzLeads.findById(id)
+      if (!lead) {
+        return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+      }
+      return NextResponse.json(lead)
+    }
+
     const lead = await db.mpzLead.findUnique({
       where: { id },
       include: {
@@ -42,12 +52,6 @@ export async function PUT(
     const body = await request.json()
     const { stage, assignedTo, mockupReady, automationStarted, automationDay, notes } = body
 
-    // Verify lead exists
-    const existing = await db.mpzLead.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
-    }
-
     // Validate stage if provided
     const VALID_STAGES = ['new_lead', 'mockup_needed', 'mockup_sent', 'engaged', 'video_sent', 'proof_stage', 'hot_lead', 'call_scheduled', 'closed_won', 'closed_lost', 'retention']
     if (stage !== undefined && !VALID_STAGES.includes(stage)) {
@@ -57,6 +61,27 @@ export async function PUT(
     // Validate automationDay bounds
     if (automationDay !== undefined && (typeof automationDay !== 'number' || automationDay < 0 || automationDay > 14)) {
       return NextResponse.json({ error: 'automationDay must be between 0 and 14' }, { status: 400 })
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memMpzLeads.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+      }
+      const updateData: Record<string, unknown> = {}
+      if (stage !== undefined) updateData.stage = stage
+      if (assignedTo !== undefined) updateData.assignedTo = assignedTo
+      if (mockupReady !== undefined) updateData.mockupReady = mockupReady
+      if (notes !== undefined) updateData.notes = notes
+      const lead = memMpzLeads.update(id, updateData)
+      return NextResponse.json(lead)
+    }
+
+    // DB path
+    const existing = await db.mpzLead.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
     }
 
     const lead = await db.mpzLead.update({
@@ -88,6 +113,17 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memMpzLeads.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+      }
+      memMpzLeads.delete(id)
+      return NextResponse.json({ success: true })
+    }
+
     const existing = await db.mpzLead.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })

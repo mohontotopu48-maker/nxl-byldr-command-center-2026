@@ -58,7 +58,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-type CustomerStatus = 'active' | 'inactive' | 'lead'
+type CustomerStatus = 'active' | 'inactive'
 type CustomerPlan = 'free' | 'pro' | 'enterprise'
 
 interface Customer {
@@ -66,7 +66,7 @@ interface Customer {
   name: string
   email: string
   company: string | null
-  phone: string
+  phone: string | null
   status: CustomerStatus
   plan: CustomerPlan
   revenue: number
@@ -75,7 +75,6 @@ interface Customer {
 const statusStyles: Record<CustomerStatus, string> = {
   active: 'bg-primary/15 text-primary border-primary/20',
   inactive: 'bg-muted text-muted-foreground border-border',
-  lead: 'bg-amber-400/15 text-amber-400 border-amber-400/20',
 }
 
 const planStyles: Record<CustomerPlan, string> = {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { shouldUseMemory, memContact } from '@/lib/in-memory-store'
 
 // GET /api/contact — list all contact messages (admin view)
 // Supports ?status=new|in_progress|replied|closed|spam filter
@@ -23,6 +24,14 @@ export async function GET(request: NextRequest) {
     if (customerEmail) where.customerEmail = customerEmail
 
     const whereClause = Object.keys(where).length > 0 ? where : undefined
+
+    if (shouldUseMemory()) {
+      const { data, total } = memContact.getAll(skip, limit, { status: status || undefined })
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, messages] = await Promise.all([
       db.contactMessage.count({ where: whereClause }),
@@ -86,6 +95,11 @@ export async function POST(request: NextRequest) {
 
     const validPriorities = ['low', 'normal', 'high', 'urgent']
     const validPriority = validPriorities.includes(priority) ? priority : 'normal'
+
+    if (shouldUseMemory()) {
+      const contactMessage = memContact.create({ customerName, customerEmail, subject, message, priority: validPriority })
+      return NextResponse.json(contactMessage, { status: 201 })
+    }
 
     const contactMessage = await db.contactMessage.create({
       data: {

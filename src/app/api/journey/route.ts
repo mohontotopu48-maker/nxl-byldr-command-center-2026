@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memJourneys, memCustomers } from '@/lib/in-memory-store'
 
 // Default 13 setup steps per PDF specification
 const DEFAULT_STEPS = [
@@ -28,6 +29,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const { data, total } = memJourneys.getAll(skip, limit)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, journeys] = await Promise.all([
       db.clientJourney.count(),
@@ -63,6 +72,22 @@ export async function POST(request: NextRequest) {
 
     if (!customerId) {
       return NextResponse.json({ error: 'customerId is required' }, { status: 400 })
+    }
+
+    if (shouldUseMemory()) {
+      const customer = memCustomers.findById(customerId)
+      if (!customer) {
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      }
+      try {
+        const journey = memJourneys.create(customerId)
+        return NextResponse.json(journey)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message.includes('already exists')) {
+          return NextResponse.json({ error: 'Journey already exists for this customer' }, { status: 409 })
+        }
+        throw err
+      }
     }
 
     // Check if customer exists

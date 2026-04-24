@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memDashboard } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
   try {
+    if (shouldUseMemory()) {
+      const stats = memDashboard.getStats()
+      return NextResponse.json(stats)
+    }
+
     const [
       totalProjects,
       activeTasks,

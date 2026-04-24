@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memTeam } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -11,6 +12,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const { data, total } = memTeam.getAll(skip, limit)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, members] = await Promise.all([
       db.teamMember.count(),
@@ -80,19 +89,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existingMember = await db.teamMember.findUnique({ where: { email: email.trim().toLowerCase() } })
-    if (existingMember) {
-      return NextResponse.json(
-        { error: 'A team member with this email already exists' },
-        { status: 400 }
-      )
-    }
-
     // master_admin role can NEVER be set via the API — only via MASTER_ADMIN_EMAILS
     const safeRoles = ['admin', 'manager', 'member']
     if (role && !safeRoles.includes(role)) {
       return NextResponse.json(
         { error: `Invalid role. Must be one of: ${safeRoles.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    if (shouldUseMemory()) {
+      try {
+        const member = memTeam.create({ name, email, role, avatar, status })
+        return NextResponse.json(member, { status: 201 })
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message.includes('already exists')) {
+          return NextResponse.json(
+            { error: 'A team member with this email already exists' },
+            { status: 400 }
+          )
+        }
+        throw err
+      }
+    }
+
+    const existingMember = await db.teamMember.findUnique({ where: { email: email.trim().toLowerCase() } })
+    if (existingMember) {
+      return NextResponse.json(
+        { error: 'A team member with this email already exists' },
         { status: 400 }
       )
     }

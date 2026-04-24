@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzLeads, memMpzTasks, memMpzActivities } from '@/lib/in-memory-store'
 
 export async function PUT(
   request: NextRequest,
@@ -11,6 +12,35 @@ export async function PUT(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const lead = memMpzLeads.findById(id)
+      if (!lead) {
+        return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+      }
+      const VALID_CURRENT_STAGES = ['new_lead', 'mockup_needed']
+      if (!VALID_CURRENT_STAGES.includes((lead as Record<string, unknown>).stage as string)) {
+        return NextResponse.json(
+          { error: `Cannot mark mockup ready — lead is at "${(lead as Record<string, unknown>).stage}", expected one of: ${VALID_CURRENT_STAGES.join(', ')}` },
+          { status: 400 }
+        )
+      }
+      const updatedLead = memMpzLeads.update(id, { mockupReady: true, stage: 'mockup_sent' })
+      memMpzTasks.create({
+        title: 'Start 14-day funnel',
+        description: `Begin 14-day automation funnel for ${lead.name} (${lead.businessName})`,
+        status: 'pending',
+        priority: 'high',
+        assignedTo: (lead as Record<string, unknown>).assignedTo as string || 'Geo',
+        leadId: id,
+      })
+      memMpzActivities.create({
+        type: 'mockup_ready',
+        message: `Mockup marked as ready for ${lead.name}. Automation started, 14-day funnel task assigned.`,
+        leadId: id,
+      })
+      return NextResponse.json(updatedLead)
+    }
 
     const lead = await db.mpzLead.findUnique({ where: { id } })
     if (!lead) {

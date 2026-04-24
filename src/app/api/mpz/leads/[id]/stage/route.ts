@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzLeads, memMpzActivities } from '@/lib/in-memory-store'
 
 export async function PUT(
   request: NextRequest,
@@ -21,6 +22,21 @@ export async function PUT(
     const validStages = ['new_lead', 'mockup_needed', 'mockup_sent', 'engaged', 'video_sent', 'proof_stage', 'hot_lead', 'call_scheduled', 'closed_won', 'closed_lost', 'retention']
     if (!validStages.includes(stage)) {
       return NextResponse.json({ error: 'Invalid stage. Must be one of: ' + validStages.join(', ') }, { status: 400 })
+    }
+
+    if (shouldUseMemory()) {
+      const currentLead = memMpzLeads.findById(id)
+      if (!currentLead) {
+        return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+      }
+      const previousStage = (currentLead as Record<string, unknown>).stage as string
+      memMpzActivities.create({
+        type: 'stage_change',
+        message: `${currentLead.name} moved from "${previousStage}" to "${stage}"`,
+        leadId: id,
+      })
+      const lead = memMpzLeads.updateStage(id, stage)
+      return NextResponse.json(lead)
     }
 
     const currentLead = await db.mpzLead.findUnique({ where: { id } })

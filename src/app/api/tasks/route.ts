@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memTasks, memProjects } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -14,6 +15,17 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const filters: { projectId?: string; status?: string } = {}
+      if (projectId) filters.projectId = projectId
+      if (status) filters.status = status
+      const { data, total } = memTasks.getAll(skip, limit, filters)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const where: Record<string, unknown> = {}
 
@@ -83,6 +95,19 @@ export async function POST(request: NextRequest) {
         { error: 'Project ID is required' },
         { status: 400 }
       )
+    }
+
+    if (shouldUseMemory()) {
+      const projectExists = memProjects.findById(projectId)
+      if (!projectExists) {
+        return NextResponse.json(
+          { error: 'Referenced project not found' },
+          { status: 400 }
+        )
+      }
+
+      const task = memTasks.create({ title, description, status, priority, projectId, assigneeId, dueDate })
+      return NextResponse.json(task, { status: 201 })
     }
 
     const projectExists = await db.project.findUnique({ where: { id: projectId } })

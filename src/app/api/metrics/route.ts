@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMetrics } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -20,6 +21,17 @@ export async function GET(request: NextRequest) {
     }
 
     const whereClause = Object.keys(where).length > 0 ? where : undefined
+
+    if (shouldUseMemory()) {
+      let metrics = memMetrics.getAll()
+      if (category) {
+        metrics = metrics.filter((m: Record<string, unknown>) => m.category === category)
+      }
+      return NextResponse.json({
+        data: metrics,
+        pagination: { page, limit, total: metrics.length, totalPages: Math.ceil(metrics.length / limit) },
+      })
+    }
 
     const [total, metrics] = await Promise.all([
       db.metric.count({ where: whereClause }),
@@ -71,6 +83,11 @@ export async function POST(request: NextRequest) {
         { error: 'Metric category is required' },
         { status: 400 }
       )
+    }
+
+    if (shouldUseMemory()) {
+      const metric = memMetrics.create({ name, value, unit, category })
+      return NextResponse.json(metric, { status: 201 })
     }
 
     const metric = await db.metric.create({

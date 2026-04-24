@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzDashboard } from '@/lib/in-memory-store'
 
 export async function GET(request: Request) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
 
   try {
+    if (shouldUseMemory()) {
+      const stats = memMpzDashboard.getStats()
+      return NextResponse.json(stats)
+    }
+
     const [
       totalLeads,
       newLeads,

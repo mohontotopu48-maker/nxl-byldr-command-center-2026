@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memContact } from '@/lib/in-memory-store'
 
 // GET /api/contact/[id] — get a single contact message by id
 export async function GET(
@@ -12,6 +13,14 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const contactMessage = memContact.findById(id)
+      if (!contactMessage) {
+        return NextResponse.json({ error: 'Contact message not found' }, { status: 404 })
+      }
+      return NextResponse.json(contactMessage)
+    }
 
     const contactMessage = await db.contactMessage.findUnique({
       where: { id },
@@ -42,17 +51,10 @@ export async function PATCH(
     const body = await request.json()
     const { status, reply } = body
 
-    // Verify the message exists
-    const existing = await db.contactMessage.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json({ error: 'Contact message not found' }, { status: 404 })
-    }
-
-    // Build update payload
+    // Validate inputs first
     const updateData: Record<string, unknown> = {}
 
     if (status !== undefined) {
-      // Validate allowed status values
       const allowedStatuses = ['unread', 'read', 'replied']
       if (!allowedStatuses.includes(status)) {
         return NextResponse.json(
@@ -62,7 +64,6 @@ export async function PATCH(
       }
       updateData.status = status
 
-      // If marking as replied, auto-set repliedAt
       if (status === 'replied') {
         updateData.repliedAt = new Date()
       }
@@ -73,9 +74,24 @@ export async function PATCH(
         return NextResponse.json({ error: 'Reply must be a string under 10,000 characters' }, { status: 400 })
       }
       updateData.reply = reply
-      // If a reply is being written, auto-set repliedAt and status
       updateData.repliedAt = new Date()
       updateData.status = 'replied'
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memContact.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Contact message not found' }, { status: 404 })
+      }
+      const contactMessage = memContact.update(id, updateData)
+      return NextResponse.json(contactMessage)
+    }
+
+    // DB path
+    const existing = await db.contactMessage.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Contact message not found' }, { status: 404 })
     }
 
     const contactMessage = await db.contactMessage.update({
@@ -101,7 +117,16 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    // Verify the message exists before deleting
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memContact.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Contact message not found' }, { status: 404 })
+      }
+      memContact.delete(id)
+      return NextResponse.json({ success: true })
+    }
+
     const existing = await db.contactMessage.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Contact message not found' }, { status: 404 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireMasterAdmin } from '@/lib/auth-guard'
+import { shouldUseMemory, seedMpzData } from '@/lib/in-memory-store'
 
 type LeadStage = 'new_lead' | 'mockup_needed' | 'mockup_sent' | 'engaged' | 'video_sent' | 'proof_stage' | 'hot_lead' | 'call_scheduled' | 'closed_won' | 'closed_lost' | 'retention' | 'contacted' | 'qualified' | 'proposal_sent' | 'mockup_ready' | 'mockup_delivered' | 'revision'
 type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
@@ -49,6 +50,16 @@ export async function POST(request: NextRequest) {
   if (!auth.authorized) return auth.response
 
   try {
+    if (shouldUseMemory()) {
+      const result = seedMpzData()
+      return NextResponse.json({
+        success: true,
+        leads: result.leads,
+        tasks: result.tasks,
+        activities: result.activities,
+      })
+    }
+
     await db.mpzTask.deleteMany()
     await db.mpzActivity.deleteMany()
     await db.mpzLead.deleteMany()

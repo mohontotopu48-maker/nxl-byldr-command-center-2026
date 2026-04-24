@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memTasks, memProjects } from '@/lib/in-memory-store'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,17 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const task = memTasks.findById(id)
+      if (!task) {
+        return NextResponse.json(
+          { error: 'Task not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(task)
+    }
 
     const task = await db.task.findUnique({
       where: { id },
@@ -53,6 +65,49 @@ export async function PUT(
     const body = await request.json()
     const { title, description, status, priority, projectId, assigneeId, dueDate } = body
 
+    // Validate inputs
+    const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled']
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    const validPriorities = ['low', 'medium', 'high', 'critical']
+    if (priority && !validPriorities.includes(priority)) {
+      return NextResponse.json(
+        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memTasks.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+      // Validate project exists
+      if (projectId) {
+        const proj = memProjects.findById(projectId)
+        if (!proj) {
+          return NextResponse.json({ error: 'Referenced project not found' }, { status: 400 })
+        }
+      }
+      const updateData: Record<string, unknown> = {}
+      if (title !== undefined) updateData.title = title.trim()
+      if (description !== undefined) updateData.description = description ?? null
+      if (status !== undefined) updateData.status = status
+      if (priority !== undefined) updateData.priority = priority
+      if (projectId !== undefined) updateData.projectId = projectId
+      if (assigneeId !== undefined) updateData.assigneeId = assigneeId ?? null
+      if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null
+      const task = memTasks.update(id, updateData)
+      return NextResponse.json(task)
+    }
+
+    // DB path
     const existingTask = await db.task.findUnique({ where: { id } })
     if (!existingTask) {
       return NextResponse.json(
@@ -79,22 +134,6 @@ export async function PUT(
           { status: 400 }
         )
       }
-    }
-
-    const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled']
-    if (status && !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-        { status: 400 }
-      )
-    }
-
-    const validPriorities = ['low', 'medium', 'high', 'critical']
-    if (priority && !validPriorities.includes(priority)) {
-      return NextResponse.json(
-        { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
-        { status: 400 }
-      )
     }
 
     const task = await db.task.update({
@@ -137,6 +176,16 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memTasks.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+      memTasks.delete(id)
+      return NextResponse.json({ message: 'Task deleted successfully' })
+    }
 
     const existingTask = await db.task.findUnique({ where: { id } })
     if (!existingTask) {

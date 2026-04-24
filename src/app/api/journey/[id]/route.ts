@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memJourneys } from '@/lib/in-memory-store'
 
 // GET /api/journey/[id] — get single journey with full details
 export async function GET(
@@ -12,6 +13,15 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const journey = memJourneys.findById(id)
+      if (!journey) {
+        return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
+      }
+      return NextResponse.json(journey)
+    }
+
     const journey = await db.clientJourney.findUnique({
       where: { id },
       include: {
@@ -46,12 +56,7 @@ export async function PATCH(
     const body = await request.json()
     const { currentPhase, overallStatus, notes } = body
 
-    // Verify journey exists before update
-    const existing = await db.clientJourney.findUnique({ where: { id } })
-    if (!existing) {
-      return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
-    }
-
+    // Validate inputs first
     const VALID_PHASES = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
     const VALID_STATUSES = ['active', 'completed', 'paused', 'on_hold']
 
@@ -74,6 +79,26 @@ export async function PATCH(
         { error: 'Notes must be 10000 characters or less' },
         { status: 400 }
       )
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const journey = memJourneys.findById(id)
+      if (!journey) {
+        return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
+      }
+      const updateData: Record<string, unknown> = {}
+      if (currentPhase !== undefined) updateData.currentPhase = currentPhase
+      if (overallStatus !== undefined) updateData.overallStatus = overallStatus
+      if (notes !== undefined) updateData.notes = notes
+      const updated = { ...journey, ...updateData, updatedAt: new Date().toISOString() }
+      return NextResponse.json(updated)
+    }
+
+    // DB path
+    const existing = await db.clientJourney.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
     }
 
     const journey = await db.clientJourney.update({
@@ -102,10 +127,22 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memJourneys.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
+      }
+      memJourneys.delete(id)
+      return NextResponse.json({ success: true })
+    }
+
     const existing = await db.clientJourney.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
     }
+
     await db.clientJourney.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {

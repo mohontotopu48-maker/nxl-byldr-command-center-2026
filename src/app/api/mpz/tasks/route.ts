@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzTasks } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -11,6 +12,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const { data, total } = memMpzTasks.getAll(skip, limit)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, tasks] = await Promise.all([
       db.mpzTask.count(),
@@ -61,6 +70,11 @@ export async function POST(request: NextRequest) {
         { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },
         { status: 400 }
       )
+    }
+
+    if (shouldUseMemory()) {
+      const task = memMpzTasks.create({ title, description, status, priority, assignedTo, leadId, dueDate })
+      return NextResponse.json(task, { status: 201 })
     }
 
     const task = await db.mpzTask.create({

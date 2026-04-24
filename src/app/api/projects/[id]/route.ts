@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memProjects } from '@/lib/in-memory-store'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,17 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    if (shouldUseMemory()) {
+      const project = memProjects.findById(id)
+      if (!project) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(project)
+    }
 
     const project = await db.project.findUnique({
       where: { id },
@@ -55,14 +67,7 @@ export async function PUT(
     const body = await request.json()
     const { name, description, status, priority, progress, startDate, endDate } = body
 
-    const existingProject = await db.project.findUnique({ where: { id } })
-    if (!existingProject) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      )
-    }
-
+    // Validate inputs
     const validStatuses = ['active', 'paused', 'completed', 'archived']
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
@@ -83,6 +88,33 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Progress must be a number between 0 and 100' },
         { status: 400 }
+      )
+    }
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memProjects.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+      const updateData: Record<string, unknown> = {}
+      if (name !== undefined) updateData.name = name.trim()
+      if (description !== undefined) updateData.description = description ?? null
+      if (status !== undefined) updateData.status = status
+      if (priority !== undefined) updateData.priority = priority
+      if (progress !== undefined) updateData.progress = progress
+      if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null
+      if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null
+      const project = memProjects.update(id, updateData)
+      return NextResponse.json(project)
+    }
+
+    // DB path
+    const existingProject = await db.project.findUnique({ where: { id } })
+    if (!existingProject) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
       )
     }
 
@@ -118,6 +150,16 @@ export async function DELETE(
 
   try {
     const { id } = await params
+
+    // In-memory path FIRST — before any DB calls
+    if (shouldUseMemory()) {
+      const existing = memProjects.findById(id)
+      if (!existing) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+      memProjects.delete(id)
+      return NextResponse.json({ message: 'Project deleted successfully' })
+    }
 
     const existingProject = await db.project.findUnique({ where: { id } })
     if (!existingProject) {

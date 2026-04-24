@@ -2,6 +2,7 @@ import type { ClientSetupStep } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memJourneys } from '@/lib/in-memory-store'
 
 // PUT /api/journey/[id]/steps — update a specific setup step status
 export async function PUT(
@@ -22,6 +23,19 @@ export async function PUT(
     const validStatuses = ['pending', 'in_progress', 'completed']
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status. Use: pending, in_progress, completed' }, { status: 400 })
+    }
+
+    if (shouldUseMemory()) {
+      try {
+        const step = memJourneys.updateStep(journeyId, stepId, status)
+        const journey = memJourneys.findById(journeyId) as Record<string, unknown> | null
+        return NextResponse.json({ step, completedSteps: journey?.completedSteps, totalSteps: journey?.totalSteps, currentPhase: journey?.currentPhase, overallStatus: journey?.overallStatus })
+      } catch (err: unknown) {
+        if (err instanceof Error && (err.message.includes('not found') || err.message.includes('does not belong'))) {
+          return NextResponse.json({ error: 'Step not found or does not belong to this journey' }, { status: 404 })
+        }
+        throw err
+      }
     }
 
     // Verify the step belongs to this journey
@@ -98,6 +112,20 @@ export async function POST(
 
     if (updates.length > 50) {
       return NextResponse.json({ error: 'Maximum 50 updates per request' }, { status: 400 })
+    }
+
+    if (shouldUseMemory()) {
+      const validStatuses = ['pending', 'in_progress', 'completed']
+      const results: Record<string, unknown>[] = []
+      for (const { stepId, status } of updates) {
+        if (!validStatuses.includes(status)) continue
+        try {
+          const step = memJourneys.updateStep(journeyId, stepId, status)
+          results.push(step)
+        } catch { /* skip invalid steps */ }
+      }
+      const journey = memJourneys.findById(journeyId) as Record<string, unknown> | null
+      return NextResponse.json({ results, completedSteps: journey?.completedSteps, currentPhase: journey?.currentPhase })
     }
 
     const validStatuses = ['pending', 'in_progress', 'completed']

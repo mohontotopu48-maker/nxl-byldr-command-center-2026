@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { shouldUseMemory, memMpzLeads } from '@/lib/in-memory-store'
 
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
@@ -11,6 +12,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
     const skip = (page - 1) * limit
+
+    if (shouldUseMemory()) {
+      const { data, total } = memMpzLeads.getAll(skip, limit)
+      return NextResponse.json({
+        data,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      })
+    }
 
     const [total, leads] = await Promise.all([
       db.mpzLead.count(),
@@ -48,6 +57,11 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: name, businessName, serviceType' },
         { status: 400 }
       )
+    }
+
+    if (shouldUseMemory()) {
+      const lead = memMpzLeads.create({ name, businessName, phone, email, serviceType })
+      return NextResponse.json(lead, { status: 201 })
     }
 
     const lead = await db.mpzLead.create({
