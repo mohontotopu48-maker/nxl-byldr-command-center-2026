@@ -24,10 +24,10 @@ export function MpzAlerts({ onSelectLead }: MpzAlertsProps) {
 
   useEffect(() => {
     Promise.all([
-      apiFetch('/api/mpz/leads').then(r => r.ok ? r.json() : []),
-      apiFetch('/api/mpz/tasks').then(r => r.ok ? r.json() : []),
+      apiFetch('/api/mpz/leads').then(r => r.ok ? r.json().then(json => json.data || json) : []),
+      apiFetch('/api/mpz/tasks').then(r => r.ok ? r.json().then(json => json.data || json) : []),
     ])
-      .then(([l, t]) => { setLeads(l); setTasks(t) })
+      .then(([l, t]) => { setLeads(l as any); setTasks(t as any) })
       .catch(() => { toast.error('Failed to load alerts data') })
       .finally(() => setLoading(false))
   }, [])

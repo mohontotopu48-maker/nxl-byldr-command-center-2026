@@ -136,7 +136,8 @@ export function ProjectsView() {
     try {
       const res = await apiFetch('/api/projects')
       if (res.ok) {
-        const data: ApiProject[] = await res.json()
+        const json = await res.json()
+        const data: ApiProject[] = json.data || json
         setProjects(data)
       } else {
         toast.error('Failed to load projects')

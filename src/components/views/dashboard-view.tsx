@@ -214,8 +214,9 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
       ])
       if (dashRes.ok) setStats(await dashRes.json())
       if (journeyRes.ok) {
-        const data = await journeyRes.json()
-        setJourneys(Array.isArray(data) ? data : [])
+        const json = await journeyRes.json()
+        const arr = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : [])
+        setJourneys(arr)
       }
       if (alertRes.ok) {
         const data = await alertRes.json()
@@ -257,8 +258,9 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
     try {
       const res = await apiFetch('/api/journey')
       if (res.ok) {
-        const data = await res.json()
-        setJourneys(Array.isArray(data) ? data : [])
+        const json = await res.json()
+        const arr = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : [])
+        setJourneys(arr)
       }
     } catch { toast.error('Failed to refresh journeys') }
   }, [])
@@ -835,8 +837,8 @@ function ClientDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) 
       try {
         const res = await apiFetch('/api/journey')
         if (res.ok) {
-          const data = await res.json()
-          const journeys: ClientJourney[] = Array.isArray(data) ? data : []
+          const json = await res.json()
+          const journeys: ClientJourney[] = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : [])
           const myJourney = journeys.find(j => j.customer.email?.toLowerCase() === auth?.email?.toLowerCase())
           if (myJourney) {
             setJourney(myJourney)

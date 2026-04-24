@@ -165,8 +165,8 @@ export function MessagesView() {
       const query = params.toString() ? `?${params.toString()}` : ''
       const res = await apiFetch(`/api/contact${query}`)
       if (res.ok) {
-        const data = await res.json()
-        setMessages(data)
+        const json = await res.json()
+        setMessages(json.data || json)
       } else {
         toast.error('Failed to load messages')
       }

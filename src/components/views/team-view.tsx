@@ -131,8 +131,8 @@ export function TeamView() {
     try {
       const res = await apiFetch('/api/team')
       if (res.ok) {
-        const data = await res.json()
-        setMembers(data)
+        const json = await res.json()
+        setMembers(json.data || json)
       }
     } catch {
       toast.error('Failed to load team members')

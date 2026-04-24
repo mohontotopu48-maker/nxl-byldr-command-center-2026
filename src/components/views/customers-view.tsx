@@ -115,8 +115,8 @@ export function CustomersView() {
     try {
       const res = await apiFetch('/api/customers')
       if (res.ok) {
-        const data = await res.json()
-        setCustomers(data)
+        const json = await res.json()
+        setCustomers(json.data || json)
       }
     } catch {
       toast.error('Failed to load customers')

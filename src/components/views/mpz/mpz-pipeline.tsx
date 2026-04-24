@@ -24,8 +24,8 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
     try {
       const res = await apiFetch('/api/mpz/leads')
       if (!res.ok) return
-      const data = await res.json()
-      setLeads(data)
+      const json = await res.json()
+      setLeads(json.data || json)
     } catch {
       setLeads([])
     } finally {

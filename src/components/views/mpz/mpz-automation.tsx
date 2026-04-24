@@ -26,7 +26,7 @@ export function MpzAutomation() {
 
   useEffect(() => {
     apiFetch('/api/mpz/leads')
-      .then(r => r.ok ? r.json() : [])
+      .then(r => r.ok ? r.json().then(json => json.data || json) : [])
       .then(setLeads)
       .catch(() => setLeads([]))
       .finally(() => setLoading(false))

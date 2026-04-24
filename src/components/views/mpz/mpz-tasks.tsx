@@ -22,7 +22,7 @@ export function MpzTasks() {
   useEffect(() => {
     apiFetch('/api/mpz/tasks')
       .then(r => r.ok ? r.json() : [])
-      .then(setTasks)
+      .then(json => setTasks(json.data || json))
       .catch(() => setTasks([]))
       .finally(() => setLoading(false))
   }, [])
