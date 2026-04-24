@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
+import { requireMasterAdmin } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
+  // Only master admins can register new team members
+  const auth = requireMasterAdmin(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { name, email, password } = await request.json()
 
@@ -26,10 +31,7 @@ export async function POST(request: NextRequest) {
     const existing = await db.teamMember.findUnique({ where: { email: normalizedEmail } })
     if (existing) {
       return NextResponse.json({
-        id: existing.id,
-        name: existing.name,
-        email: existing.email,
-        role: existing.role,
+        message: 'User already exists',
         isNew: false,
       })
     }

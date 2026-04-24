@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
 // GET /api/alert-bar — return current alert status
 export async function GET() {
@@ -19,8 +20,11 @@ export async function GET() {
   }
 }
 
-// POST /api/alert-bar — update alert status
+// POST /api/alert-bar — update alert status (auth required)
 export async function POST(request: NextRequest) {
+  const auth = checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { active, message } = await request.json()
     

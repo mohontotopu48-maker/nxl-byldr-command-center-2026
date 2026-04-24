@@ -44,15 +44,10 @@ const authOptions: NextAuthOptions = {
           const user = await db.teamMember.findUnique({ where: { email } })
 
           if (user) {
-            // Verify password against stored password hash
-            if (user.password && user.password.length > 0) {
-              // Support both bcrypt hash and legacy plain-text passwords during migration
-              if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
-                const isValid = await compare(password, user.password)
-                if (!isValid) return null
-              } else if (user.password !== password) {
-                return null
-              }
+            // Verify password against stored bcrypt hash
+            if (user.password && user.password.length > 0 && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+              const isValid = await compare(password, user.password)
+              if (!isValid) return null
               return {
                 id: user.id,
                 name: user.name,
@@ -61,7 +56,7 @@ const authOptions: NextAuthOptions = {
                 image: user.avatar,
               }
             }
-            // No password stored - reject login (must set password via admin panel)
+            // No valid bcrypt hash stored — reject login
             return null
           }
 

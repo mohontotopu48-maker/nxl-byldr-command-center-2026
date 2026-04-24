@@ -498,10 +498,16 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                       const label = provider.charAt(0).toUpperCase() + provider.slice(1)
                       return (
                         <Button key={provider} type="button" variant="outline"
+                          disabled={!email || loading}
                           onClick={() => {
-                            const oauthRes = fetch('/api/auth/register', {
+                            if (!email) {
+                              toast.error('Please enter your email first')
+                              return
+                            }
+                            setLoading(true)
+                            fetch('/api/auth/register', {
                               method: 'POST', headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ name: email.split('@')[0] || 'User', email: email || `${provider}-user@vsual.com`, provider }),
+                              body: JSON.stringify({ name: email.split('@')[0] || 'User', email, provider }),
                             }).then(r => r.ok ? r.json() : null).then(data => {
                               if (data) {
                                 const role = MASTER_ADMIN_EMAILS.includes((data.email || '').toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) ? 'master_admin' : (data.role || 'member')
@@ -513,6 +519,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
                                 toast.error(`Failed to sign in with ${label}`)
                               }
                             }).catch(() => toast.error('Network error.'))
+                            .finally(() => setLoading(false))
                           }}
                           className="h-11 border-border bg-white hover:bg-gray-50 text-gray-700 flex flex-col items-center justify-center gap-1 py-2 px-1">
                           {provider === 'google' && (

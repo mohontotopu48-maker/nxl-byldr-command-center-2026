@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SidebarNav, type NavView } from '@/components/sidebar-nav'
 import { HeaderBar } from '@/components/header-bar'
@@ -41,19 +41,22 @@ interface CommandCenterProps {
 export function CommandCenter({ onLogout }: CommandCenterProps) {
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const getStoredAuth = (): { name: string; email: string; role: string } | null => {
-    if (typeof window === 'undefined') return null
+
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
     try {
       const auth = localStorage.getItem('vsual_auth')
-      if (auth) return JSON.parse(auth)
-    } catch {}
-    return null
-  }
+      if (auth) {
+        const parsed = JSON.parse(auth)
+        setUserRole(parsed?.role || null)
+        setUserEmail(parsed?.email || null)
+      }
+    } catch { /* empty */ }
+  }, [])
 
-  const storedAuth = getStoredAuth()
-  const [userRole, setUserRole] = useState<string | null>(storedAuth?.role || null)
-
-  const isAdmin = userRole === 'master_admin' || MASTER_ADMIN_EMAILS.includes(storedAuth?.email?.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number])
+  const isAdmin = userRole === 'master_admin' || MASTER_ADMIN_EMAILS.includes(userEmail?.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number])
 
   const ActiveComponent = viewComponents[activeView]
 

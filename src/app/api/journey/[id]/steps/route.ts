@@ -20,6 +20,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid status. Use: pending, in_progress, completed' }, { status: 400 })
     }
 
+    // Verify the step belongs to this journey
+    const existingStep = await db.clientSetupStep.findUnique({ where: { id: stepId } })
+    if (!existingStep || existingStep.journeyId !== journeyId) {
+      return NextResponse.json({ error: 'Step not found or does not belong to this journey' }, { status: 404 })
+    }
+
     // Update the step
     const step = await db.clientSetupStep.update({
       where: { id: stepId },
@@ -93,8 +99,12 @@ export async function POST(
       return NextResponse.json({ error: 'updates array required' }, { status: 400 })
     }
 
+    const validStatuses = ['pending', 'in_progress', 'completed']
     const results: ClientSetupStep[] = []
     for (const { stepId, status } of updates) {
+      if (!validStatuses.includes(status)) continue
+      const existingStep = await db.clientSetupStep.findUnique({ where: { id: stepId } })
+      if (!existingStep || existingStep.journeyId !== journeyId) continue
       const step = await db.clientSetupStep.update({
         where: { id: stepId },
         data: {

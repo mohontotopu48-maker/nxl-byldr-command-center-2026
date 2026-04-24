@@ -20,8 +20,8 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors * *" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, max-age=0" },
           { key: "Pragma", value: "no-cache" },
           { key: "Expires", value: "0" },

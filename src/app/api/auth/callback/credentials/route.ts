@@ -20,14 +20,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
     }
 
-    // Check password — support both bcrypt hash and legacy plain-text
-    if (user.password && user.password.length > 0) {
-      if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
-        const isValid = await compare(password, user.password)
-        if (!isValid) {
-          return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
-        }
-      } else if (user.password !== password) {
+    // Check password — only bcrypt hashes are accepted
+    if (user.password && user.password.length > 0 && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+      const isValid = await compare(password, user.password)
+      if (!isValid) {
         return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
       }
     } else {

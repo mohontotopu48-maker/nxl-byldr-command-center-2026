@@ -10,6 +10,10 @@ export async function GET(
 
     const customer = await db.customer.findUnique({
       where: { id },
+      select: {
+        id: true, name: true, email: true, company: true, phone: true,
+        status: true, plan: true, revenue: true, notes: true, createdAt: true, updatedAt: true,
+      },
     })
 
     if (!customer) {
@@ -87,6 +91,10 @@ export async function PUT(
 
     const customer = await db.customer.update({
       where: { id },
+      select: {
+        id: true, name: true, email: true, company: true, phone: true,
+        status: true, plan: true, revenue: true, notes: true, createdAt: true, updatedAt: true,
+      },
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(email !== undefined && { email: email.trim().toLowerCase() }),

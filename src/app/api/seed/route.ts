@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hash } from 'bcryptjs'
+import { requireMasterAdmin } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
+  // Seed endpoint requires master admin authentication
+  const auth = requireMasterAdmin(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { searchParams } = new URL(request.url)
     const force = searchParams.get('force') === 'true'

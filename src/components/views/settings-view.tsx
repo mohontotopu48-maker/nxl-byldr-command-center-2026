@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   User,
@@ -54,19 +54,25 @@ const itemVariants = {
 }
 
 export function SettingsView() {
-  const getStoredAuth = (): { name: string; email: string; role: string } | null => {
-    if (typeof window === 'undefined') return null
+  const [authInfo, setAuthInfo] = useState<{ name: string; email: string; role: string } | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
     try {
       const auth = localStorage.getItem('vsual_auth')
-      if (auth) return JSON.parse(auth)
-    } catch {}
-    return null
-  }
-
-  const storedAuth = getStoredAuth()
-  const [authInfo, setAuthInfo] = useState<{ name: string; email: string; role: string } | null>(
-    storedAuth ? { name: storedAuth.name || '', email: storedAuth.email || '', role: storedAuth.role || 'member' } : null
-  )
+      if (auth) {
+        const parsed = JSON.parse(auth)
+        setAuthInfo({ name: parsed.name || '', email: parsed.email || '', role: parsed.role || 'member' })
+      }
+      // Load saved profile from localStorage
+      const saved = localStorage.getItem('vsual_profile')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setProfile(prev => ({ ...prev, ...parsed }))
+      }
+    } catch { /* empty */ }
+    setMounted(true)
+  }, [])
 
   const isMasterAdmin = authInfo?.role === 'master_admin' || MASTER_ADMIN_EMAILS.includes(authInfo?.email as typeof MASTER_ADMIN_EMAILS[number])
 
@@ -87,8 +93,8 @@ export function SettingsView() {
   })
 
   const [saving, setSaving] = useState(false)
-  const { theme, setTheme } = useTheme()
-  const resolvedTheme = theme || 'dark'
+  const { theme, resolvedTheme, setTheme } = useTheme()
+  const safeTheme = resolvedTheme || theme || 'dark'
 
   const handleSave = async () => {
     setSaving(true)
@@ -199,7 +205,7 @@ export function SettingsView() {
               <div className="relative group">
                 <Avatar className="h-16 w-16">
                   <AvatarFallback className="bg-primary/20 text-primary text-lg font-bold">
-                    JD
+                    {profile.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <button className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -259,8 +265,9 @@ export function SettingsView() {
               <Textarea
                 id="bio"
                 value={profile.bio}
-                onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                onChange={(e) => setProfile({ ...profile, bio: e.target.value.slice(0, 256) })}
                 rows={3}
+                maxLength={256}
                 className="bg-card border-border text-foreground focus-visible:ring-primary/30 resize-none"
               />
               <p className="text-xs text-muted-foreground">{profile.bio.length}/256 characters</p>
@@ -349,7 +356,7 @@ export function SettingsView() {
                 <button
                   onClick={() => setTheme('dark')}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 ${
-                    resolvedTheme === 'dark'
+                    safeTheme === 'dark'
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-muted-foreground/30'
                   }`}
@@ -359,7 +366,7 @@ export function SettingsView() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-medium text-foreground">Dark</span>
-                    {theme === 'dark' && (
+                    {safeTheme === 'dark' && (
                       <Badge className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0">Active</Badge>
                     )}
                   </div>
@@ -367,7 +374,7 @@ export function SettingsView() {
                 <button
                   onClick={() => setTheme('light')}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 ${
-                    resolvedTheme === 'light'
+                    safeTheme === 'light'
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-muted-foreground/30'
                   }`}
@@ -377,7 +384,7 @@ export function SettingsView() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-medium text-foreground">Light</span>
-                    {theme === 'light' && (
+                    {safeTheme === 'light' && (
                       <Badge className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0">Active</Badge>
                     )}
                   </div>

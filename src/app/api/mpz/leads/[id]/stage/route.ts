@@ -14,6 +14,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Stage is required' }, { status: 400 })
     }
 
+    const validStages = ['new_lead', 'mockup_needed', 'mockup_sent', 'engaged', 'video_sent', 'proof_stage', 'hot_lead', 'call_scheduled', 'closed_won', 'closed_lost', 'retention']
+    if (!validStages.includes(stage)) {
+      return NextResponse.json({ error: 'Invalid stage. Must be one of: ' + validStages.join(', ') }, { status: 400 })
+    }
+
     const currentLead = await db.mpzLead.findUnique({ where: { id } })
     if (!currentLead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })

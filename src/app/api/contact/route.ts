@@ -40,6 +40,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Input length limits
+    if (typeof customerName !== 'string' || customerName.trim().length > 200) {
+      return NextResponse.json({ error: 'Name too long (max 200 characters)' }, { status: 400 })
+    }
+    if (typeof subject !== 'string' || subject.trim().length > 200) {
+      return NextResponse.json({ error: 'Subject too long (max 200 characters)' }, { status: 400 })
+    }
+    if (typeof message !== 'string' || message.trim().length > 10000) {
+      return NextResponse.json({ error: 'Message too long (max 10000 characters)' }, { status: 400 })
+    }
+
     // Basic email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(customerEmail)) {

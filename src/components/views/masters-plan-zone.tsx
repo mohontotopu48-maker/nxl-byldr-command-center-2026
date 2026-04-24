@@ -49,6 +49,10 @@ export function MastersPlanZone() {
   const handleSeed = async () => {
     try {
       const res = await fetch('/api/mpz/seed', { method: 'POST' })
+      if (!res.ok) {
+        toast.error('Failed to seed data')
+        return
+      }
       const data = await res.json()
       toast.success(`Seeded ${data.leads} leads, ${data.tasks} tasks, ${data.activities} activities`)
       setRefreshTrigger(prev => prev + 1)

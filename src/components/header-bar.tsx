@@ -38,21 +38,22 @@ const viewTitles: Record<NavView, string> = {
 export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
   const { theme, setTheme } = useTheme()
 
-  const getStoredUser = () => {
-    if (typeof window === 'undefined') return { name: 'User', email: '' }
+  const [userName, setUserName] = useState(() => {
+    if (typeof window === 'undefined') return 'User'
     try {
       const auth = localStorage.getItem('vsual_auth')
-      if (auth) {
-        const p = JSON.parse(auth)
-        return { name: p.name || 'User', email: p.email || '' }
-      }
+      if (auth) { const p = JSON.parse(auth); return p.name || 'User' }
     } catch {}
-    return { name: 'User', email: '' }
-  }
-
-  const storedUser = getStoredUser()
-  const [userName, setUserName] = useState(storedUser.name)
-  const [userEmail, setUserEmail] = useState(storedUser.email)
+    return 'User'
+  })
+  const [userEmail, setUserEmail] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const auth = localStorage.getItem('vsual_auth')
+      if (auth) { const p = JSON.parse(auth); return p.email || '' }
+    } catch {}
+    return ''
+  })
 
   const initials = userName
     .split(' ')
@@ -111,7 +112,7 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-25" />
                 <Badge className="relative h-4 w-4 items-center justify-center rounded-full p-0 text-[10px] font-bold bg-primary text-primary-foreground border-0">
-                  3
+                  {userName !== 'User' ? '•' : '0'}
                 </Badge>
               </span>
               <span className="sr-only">Notifications</span>
@@ -178,13 +179,7 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem className="text-foreground focus:bg-accent cursor-pointer">
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-foreground focus:bg-accent cursor-pointer">
-              Preferences
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-foreground focus:bg-accent cursor-pointer">
-              Billing
+              Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem

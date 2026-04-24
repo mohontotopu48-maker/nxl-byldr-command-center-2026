@@ -5,6 +5,10 @@ import { hash } from 'bcryptjs'
 export async function GET() {
   try {
     const customers = await db.customer.findMany({
+      select: {
+        id: true, name: true, email: true, company: true, phone: true,
+        status: true, plan: true, revenue: true, notes: true, createdAt: true, updatedAt: true,
+      },
       orderBy: { createdAt: 'desc' },
     })
 

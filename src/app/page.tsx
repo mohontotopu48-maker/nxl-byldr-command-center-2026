@@ -1,22 +1,25 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { LandingPage } from '@/components/landing-page'
 import { CommandCenter } from '@/components/command-center'
 import { CustomerPortal } from '@/components/customer-portal'
 
 export default function Home() {
-  const [authData, setAuthData] = useState<{ name: string; email: string; role: string; portalType: string } | null>(() => {
-    if (typeof window === 'undefined') return null
+  // Use a mounted gate to prevent hydration mismatch from localStorage
+  const [mounted, setMounted] = useState(false)
+  const [authData, setAuthData] = useState<{ name: string; email: string; role: string; portalType: string } | null>(null)
+
+  useEffect(() => {
     try {
       const auth = localStorage.getItem('vsual_auth')
       if (auth) {
         const parsed = JSON.parse(auth)
-        if (parsed.loggedIn) return parsed
+        if (parsed.loggedIn) setAuthData(parsed)
       }
-    } catch {}
-    return null
-  })
+    } catch { /* empty */ }
+    setMounted(true)
+  }, [])
 
   const isLoggedIn = !!authData
   const isCustomerPortal = authData?.portalType === 'customer'
@@ -25,8 +28,6 @@ export default function Home() {
     if (userData) {
       localStorage.setItem('vsual_auth', JSON.stringify({ ...userData, loggedIn: true }))
       setAuthData(userData)
-    } else {
-      setAuthData(prev => prev ? { ...prev, loggedIn: true } : null)
     }
   }, [])
 
@@ -34,6 +35,9 @@ export default function Home() {
     localStorage.removeItem('vsual_auth')
     setAuthData(null)
   }, [])
+
+  // Show nothing until mounted to prevent hydration mismatch
+  if (!mounted) return null
 
   if (!isLoggedIn || !authData) return <LandingPage onLogin={handleLogin} />
 

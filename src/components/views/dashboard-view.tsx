@@ -168,7 +168,16 @@ function getStatusLightClass(status: string) {
 /* ═══════════════════════════════════════════════════════════════ */
 
 export function DashboardView() {
-  const [auth] = useState<ReturnType<typeof getAuth>>(() => getAuth())
+  const [auth, setAuth] = useState<ReturnType<typeof getAuth> | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setAuth(getAuth())
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
   const isAdmin = checkIsAdmin(auth)
 
   return isAdmin ? <AdminDashboard auth={auth} /> : <ClientDashboard auth={auth} />

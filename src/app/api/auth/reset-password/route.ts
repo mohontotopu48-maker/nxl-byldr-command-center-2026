@@ -34,30 +34,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find the TeamMember and update their password
+    // Find the TeamMember or Customer and update their password
     const member = await db.teamMember.findUnique({ where: { email: normalizedEmail } })
-    if (!member) {
-      return NextResponse.json(
-        { error: 'No account found with this email address' },
-        { status: 404 }
-      )
+    if (member) {
+      const passwordHash = await hash(newPassword, 10)
+      await db.teamMember.update({ where: { email: normalizedEmail }, data: { password: passwordHash } })
+      await db.otpCode.deleteMany({ where: { email: normalizedEmail } })
+      return NextResponse.json({
+        success: true,
+        message: 'Password reset successfully. You can now sign in with your new password.',
+      })
     }
 
-    // Hash the new password before storing
-    const passwordHash = await hash(newPassword, 10)
+    const customer = await db.customer.findUnique({ where: { email: normalizedEmail } })
+    if (customer) {
+      const passwordHash = await hash(newPassword, 10)
+      await db.customer.update({ where: { email: normalizedEmail }, data: { password: passwordHash } })
+      await db.otpCode.deleteMany({ where: { email: normalizedEmail } })
+      return NextResponse.json({
+        success: true,
+        message: 'Password reset successfully. You can now sign in with your new password.',
+      })
+    }
 
-    await db.teamMember.update({
-      where: { email: normalizedEmail },
-      data: { password: passwordHash },
-    })
-
-    // Clean up OTP
-    await db.otpCode.deleteMany({ where: { email: normalizedEmail } })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Password reset successfully. You can now sign in with your new password.',
-    })
+    return NextResponse.json(
+      { error: 'No account found with this email address' },
+      { status: 404 }
+    )
   } catch (error) {
     console.error('Reset password error:', error)
     return NextResponse.json(

@@ -23,7 +23,7 @@ echo "Prisma client generated successfully."
 if [ -n "$_ORIG_DB_URL" ]; then
   export DATABASE_URL="$_ORIG_DB_URL"
   echo "Pushing schema to database..."
-  npx prisma db push --accept-data-loss 2>/dev/null || npx prisma db push
+  npx prisma db push 2>&1
   echo "Database schema pushed."
 else
   echo "Skipping db push (no DATABASE_URL configured)."
