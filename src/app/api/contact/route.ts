@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
 
 // GET /api/contact — list all contact messages (admin view)
-// Supports ?status=unread|read|replied filter
+// Supports ?status=new|in_progress|replied|closed|spam filter
 export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
@@ -11,19 +11,32 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-
     const customerEmail = searchParams.get('customerEmail')
+
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
+    const skip = (page - 1) * limit
 
     const where: Record<string, unknown> = {}
     if (status) where.status = status
     if (customerEmail) where.customerEmail = customerEmail
 
-    const messages = await db.contactMessage.findMany({
-      where: Object.keys(where).length > 0 ? where : undefined,
-      orderBy: { createdAt: 'desc' },
-    })
+    const whereClause = Object.keys(where).length > 0 ? where : undefined
 
-    return NextResponse.json(messages)
+    const [total, messages] = await Promise.all([
+      db.contactMessage.count({ where: whereClause }),
+      db.contactMessage.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+    return NextResponse.json({
+      data: messages,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    })
   } catch (error) {
     console.error('Contact message list error:', error)
     return NextResponse.json({ error: 'Failed to fetch contact messages' }, { status: 500 })
@@ -68,7 +81,7 @@ export async function POST(request: NextRequest) {
         subject: subject.trim(),
         message: message.trim(),
         priority: priority || 'normal',
-        status: 'unread',
+        status: 'new',
         assignedTo: 'both',
       },
     })

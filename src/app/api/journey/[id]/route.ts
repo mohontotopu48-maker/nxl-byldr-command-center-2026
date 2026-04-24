@@ -46,8 +46,8 @@ export async function PATCH(
     const body = await request.json()
     const { currentPhase, overallStatus, notes } = body
 
-    const VALID_PHASES = ['handover', 'game_plan', 'technical', 'live']
-    const VALID_STATUSES = ['in_progress', 'completed', 'on_hold', 'cancelled']
+    const VALID_PHASES = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+    const VALID_STATUSES = ['active', 'completed', 'paused', 'on_hold']
 
     if (currentPhase !== undefined && !VALID_PHASES.includes(currentPhase)) {
       return NextResponse.json(

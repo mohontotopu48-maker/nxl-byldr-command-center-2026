@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Create mood board and style guide',
           description: 'Research competitors and create visual mood boards for the new brand direction.',
-          status: 'done',
+          status: 'completed',
           priority: 'high',
           projectId: allProjects[0].id,
           assigneeId: allMembers[1].id,
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Design new logo concepts',
           description: 'Develop 5 logo concepts based on the approved style guide direction.',
-          status: 'done',
+          status: 'completed',
           priority: 'high',
           projectId: allProjects[0].id,
           assigneeId: allMembers[3].id,
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'User authentication flow redesign',
           description: 'Redesign the login, signup, and password recovery flows with improved UX.',
-          status: 'done',
+          status: 'completed',
           priority: 'critical',
           projectId: allProjects[1].id,
           assigneeId: allMembers[2].id,
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Offline mode support',
           description: 'Add offline data caching and sync capabilities for key features.',
-          status: 'todo',
+          status: 'pending',
           priority: 'medium',
           projectId: allProjects[1].id,
           assigneeId: allMembers[2].id,
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Performance optimization pass',
           description: 'Profile and optimize app startup time, rendering, and memory usage.',
-          status: 'todo',
+          status: 'pending',
           priority: 'high',
           projectId: allProjects[1].id,
           assigneeId: allMembers[5].id,
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Implement rate limiting middleware',
           description: 'Build rate limiting and throttling middleware for API protection.',
-          status: 'todo',
+          status: 'pending',
           priority: 'medium',
           projectId: allProjects[2].id,
           assigneeId: allMembers[0].id,
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Set up data pipeline',
           description: 'Configure ETL pipeline from various data sources to the analytics warehouse.',
-          status: 'done',
+          status: 'completed',
           priority: 'high',
           projectId: allProjects[3].id,
           assigneeId: allMembers[0].id,
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Build real-time charting components',
           description: 'Create interactive, real-time charting components using WebSocket data feeds.',
-          status: 'review',
+          status: 'in_progress',
           priority: 'high',
           projectId: allProjects[3].id,
           assigneeId: allMembers[4].id,
@@ -257,7 +257,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Create executive summary view',
           description: 'Design and implement a high-level executive summary with key KPIs and trends.',
-          status: 'done',
+          status: 'completed',
           priority: 'medium',
           projectId: allProjects[3].id,
           assigneeId: allMembers[6].id,
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Penetration testing',
           description: 'Conduct thorough penetration testing on all public-facing endpoints.',
-          status: 'done',
+          status: 'completed',
           priority: 'critical',
           projectId: allProjects[4].id,
           assigneeId: allMembers[7].id,
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
         {
           title: 'Remediate critical vulnerabilities',
           description: 'Fix all critical and high-severity vulnerabilities found during testing.',
-          status: 'done',
+          status: 'completed',
           priority: 'critical',
           projectId: allProjects[4].id,
           assigneeId: allMembers[0].id,
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
         { name: 'TechVision Inc', email: 'contact@techvision.com', password: customerPasswordHash, company: 'TechVision Inc', status: 'active', plan: 'pro', revenue: 12500 },
         { name: 'CloudNine Solutions', email: 'info@cloudnine.io', password: customerPasswordHash, company: 'CloudNine Solutions', status: 'active', plan: 'enterprise', revenue: 34000 },
         { name: 'DataFlow Analytics', email: 'hello@dataflow.dev', password: customerPasswordHash, company: 'DataFlow Analytics', status: 'active', plan: 'pro', revenue: 8900 },
-        { name: 'StartupXYZ', email: 'founders@startupxyz.co', password: customerPasswordHash, company: 'StartupXYZ', status: 'lead', plan: 'free', revenue: 0 },
+        { name: 'StartupXYZ', email: 'founders@startupxyz.co', password: customerPasswordHash, company: 'StartupXYZ', status: 'active', plan: 'free', revenue: 0 },
         { name: 'GlobalTech Corp', email: 'admin@globaltech.com', password: customerPasswordHash, company: 'GlobalTech Corp', status: 'inactive', plan: 'pro', revenue: 15600 },
         { name: 'Nexus Digital', email: 'team@nexusdigital.com', password: customerPasswordHash, company: 'Nexus Digital', status: 'active', plan: 'free', revenue: 2100 },
       ],

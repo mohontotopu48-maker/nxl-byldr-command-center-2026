@@ -4,19 +4,19 @@ import { checkRequestAuth } from '@/lib/auth-guard'
 
 // Default 13 setup steps per PDF specification
 const DEFAULT_STEPS = [
-  { stepNumber: 1, title: 'Business Information Gathered', phase: 'handover', status: 'pending' },
-  { stepNumber: 2, title: 'Access Credentials Received', phase: 'handover', status: 'pending' },
-  { stepNumber: 3, title: 'Brand Assets & Logo Collected', phase: 'handover', status: 'pending' },
-  { stepNumber: 4, title: 'Target Audience Defined', phase: 'game_plan', status: 'pending' },
-  { stepNumber: 5, title: 'Service Areas Mapped', phase: 'game_plan', status: 'pending' },
-  { stepNumber: 6, title: 'Competitor Analysis Complete', phase: 'game_plan', status: 'pending' },
-  { stepNumber: 7, title: 'Google Business Profile Optimized', phase: 'technical', status: 'pending' },
-  { stepNumber: 8, title: 'Facebook Business Page Created', phase: 'technical', status: 'pending' },
-  { stepNumber: 9, title: 'Ad Account Setup & Verification', phase: 'technical', status: 'pending' },
-  { stepNumber: 10, title: 'CRM & Lead Tracking Installed', phase: 'technical', status: 'pending' },
-  { stepNumber: 11, title: 'Landing Page Built', phase: 'technical', status: 'pending' },
-  { stepNumber: 12, title: 'Ad Campaigns Launched', phase: 'live', status: 'pending' },
-  { stepNumber: 13, title: 'Lead Machine Running', phase: 'live', status: 'pending' },
+  { stepNumber: 1, title: 'Business Information Gathered', phase: 'discovery', status: 'pending' },
+  { stepNumber: 2, title: 'Access Credentials Received', phase: 'discovery', status: 'pending' },
+  { stepNumber: 3, title: 'Brand Assets & Logo Collected', phase: 'discovery', status: 'pending' },
+  { stepNumber: 4, title: 'Target Audience Defined', phase: 'strategy', status: 'pending' },
+  { stepNumber: 5, title: 'Service Areas Mapped', phase: 'strategy', status: 'pending' },
+  { stepNumber: 6, title: 'Competitor Analysis Complete', phase: 'strategy', status: 'pending' },
+  { stepNumber: 7, title: 'Google Business Profile Optimized', phase: 'delivery', status: 'pending' },
+  { stepNumber: 8, title: 'Facebook Business Page Created', phase: 'delivery', status: 'pending' },
+  { stepNumber: 9, title: 'Ad Account Setup & Verification', phase: 'delivery', status: 'pending' },
+  { stepNumber: 10, title: 'CRM & Lead Tracking Installed', phase: 'delivery', status: 'pending' },
+  { stepNumber: 11, title: 'Landing Page Built', phase: 'delivery', status: 'pending' },
+  { stepNumber: 12, title: 'Ad Campaigns Launched', phase: 'launch', status: 'pending' },
+  { stepNumber: 13, title: 'Lead Machine Running', phase: 'launch', status: 'pending' },
 ]
 
 // GET /api/journey — list all journeys (admin view)
@@ -24,15 +24,29 @@ export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
   try {
-    const journeys = await db.clientJourney.findMany({
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        customer: { select: { id: true, name: true, email: true, company: true, status: true, plan: true } },
-        setupSteps: { orderBy: { stepNumber: 'asc' } },
-        alerts: { orderBy: { createdAt: 'desc' }, take: 1 },
-      },
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
+    const skip = (page - 1) * limit
+
+    const [total, journeys] = await Promise.all([
+      db.clientJourney.count(),
+      db.clientJourney.findMany({
+        skip,
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          customer: { select: { id: true, name: true, email: true, company: true, status: true, plan: true } },
+          setupSteps: { orderBy: { stepNumber: 'asc' } },
+          alerts: { orderBy: { createdAt: 'desc' }, take: 1 },
+        },
+      }),
+    ])
+
+    return NextResponse.json({
+      data: journeys,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
-    return NextResponse.json(journeys)
   } catch (error) {
     console.error('Journey list error:', error)
     return NextResponse.json({ error: 'Failed to fetch journeys' }, { status: 500 })
@@ -68,23 +82,23 @@ export async function POST(request: NextRequest) {
       data: {
         id: customerId,
         customerId,
-        currentPhase: 'handover',
-        overallStatus: 'in_progress',
+        currentPhase: 'discovery',
+        overallStatus: 'active',
         completedSteps: 0,
         totalSteps: 13,
         setupSteps: {
           create: DEFAULT_STEPS.map((s) => ({
             stepNumber: s.stepNumber,
             title: s.title,
-            phase: s.phase,
-            status: s.status,
+            phase: s.phase as 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth',
+            status: s.status as 'pending' | 'in_progress' | 'completed' | 'skipped',
           })),
         },
         alerts: {
           create: {
             active: false,
             message: 'All Systems Go — Project on Schedule.',
-            priority: 'normal',
+            priority: 'medium',
           },
         },
       },

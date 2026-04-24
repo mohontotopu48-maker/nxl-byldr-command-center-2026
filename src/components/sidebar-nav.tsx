@@ -66,7 +66,7 @@ function SidebarContent({
       <div className="flex items-center gap-3 px-4 py-5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
           <img
-            src="https://i.ibb.co.com/mV5xXLnB/VSUAL.png"
+            src="/images/vsual-logo.png"
             alt="VSUAL"
             className="h-6 w-6 object-contain"
           />
@@ -176,7 +176,7 @@ function SidebarContent({
       {/* Footer */}
       <div className="flex items-center gap-3 px-4 py-4">
         <img
-          src="https://i.ibb.co.com/2R1C5xG/image.png"
+          src="/images/ca-logo.png"
           alt="CA Logo"
           className="h-7 w-7 shrink-0 object-contain rounded"
         />

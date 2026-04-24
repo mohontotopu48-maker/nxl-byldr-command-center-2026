@@ -81,7 +81,7 @@ export async function PUT(
       }
     }
 
-    const validStatuses = ['todo', 'in_progress', 'review', 'done']
+    const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled']
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },

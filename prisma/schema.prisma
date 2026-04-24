@@ -8,34 +8,34 @@ datasource db {
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
   description String?
-  status      String   @default("active")
-  priority    String   @default("medium")
-  progress    Int      @default(0)
+  status      ProjectStatus @default(active)
+  priority    TaskPriority  @default(medium)
+  progress    Int           @default(0)
   startDate   DateTime?
   endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   tasks       Task[]
 
   @@index([status])
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   description String?
-  status      String     @default("todo")
-  priority    String     @default("medium")
+  status      TaskStatus    @default(pending)
+  priority    TaskPriority  @default(medium)
   projectId   String
   assigneeId  String?
   dueDate     DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  assignee    TeamMember? @relation(fields: [assigneeId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    TeamMember?   @relation(fields: [assigneeId], references: [id])
 
   @@index([projectId])
   @@index([assigneeId])
@@ -43,18 +43,18 @@ model Task {
 }
 
 model TeamMember {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  email     String   @unique
-  password  String   @default("")
-  role      String   @default("member")
+  email     String     @unique
+  password  String     @default("")
+  role      UserRole   @default(member)
   avatar    String?
-  status    String   @default("active")
+  status    UserStatus @default(active)
   phone     String?
   location  String?
   bio       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   tasks     Task[]
 
   @@index([role])
@@ -78,6 +78,9 @@ model Metric {
   unit       String?
   category   String
   recordedAt DateTime @default(now())
+
+  @@index([category])
+  @@index([recordedAt])
 }
 
 model Customer {
@@ -87,8 +90,8 @@ model Customer {
   password    String          @default("")
   company     String?
   phone       String?
-  status      String          @default("active")
-  plan        String          @default("free")
+  status      CustomerStatus  @default(active)
+  plan        CustomerPlan    @default(free)
   revenue     Float           @default(0)
   notes       String?
   createdAt   DateTime        @default(now())
@@ -108,18 +111,19 @@ model OtpCode {
   createdAt DateTime @default(now())
 
   @@index([email])
+  @@index([createdAt])
 }
 
 model SetupStep {
-  id          String    @id @default(cuid())
-  stepNumber  Int       @unique
+  id          String       @id @default(cuid())
+  stepNumber  Int          @unique
   title       String
   description String?
-  phase       String    @default("handover")
-  status      String    @default("pending")
+  phase       JourneyPhase @default(discovery)
+  status      String       @default("pending")
   completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model AlertBar {
@@ -137,8 +141,8 @@ model AlertBar {
 model ClientJourney {
   id              String           @id @default(cuid())
   customerId      String
-  currentPhase    String           @default("handover")
-  overallStatus   String           @default("in_progress")
+  currentPhase    JourneyPhase     @default(discovery)
+  overallStatus   JourneyStatus    @default(active)
   completedSteps  Int              @default(0)
   totalSteps      Int              @default(13)
   notes           String?
@@ -155,19 +159,21 @@ model ClientJourney {
 }
 
 model ClientSetupStep {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   journeyId   String
   stepNumber  Int
   title       String
   description String?
-  phase       String   @default("handover")
-  status      String   @default("pending")
+  phase       JourneyPhase @default(discovery)
+  status      String       @default("pending")
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   journey     ClientJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
 
+  @@unique([journeyId, stepNumber])
   @@index([journeyId])
+  @@index([phase])
   @@index([status])
 }
 
@@ -201,21 +207,21 @@ model AutomationLog {
 /* ═══════════════════════════════════════════════════════════════ */
 
 model MpzLead {
-  id                 String   @id @default(cuid())
+  id                 String       @id @default(cuid())
   name               String
   businessName       String
   phone              String
-  email              String
+  email              String       @unique
   serviceType        String
-  stage              String   @default("new_lead")
-  assignedTo         String   @default("Sal")
-  tags               String   @default("CA_BYLDR_LEAD")
-  mockupReady        Boolean  @default(false)
-  automationStarted  Boolean  @default(false)
-  automationDay      Int      @default(0)
+  stage              MpzLeadStage @default(new_lead)
+  assignedTo         String       @default("Sal")
+  tags               String       @default("CA_BYLDR_LEAD")
+  mockupReady        Boolean      @default(false)
+  automationStarted  Boolean      @default(false)
+  automationDay      Int          @default(0)
   notes              String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
   tasks              MpzTask[]
   activities         MpzActivity[]
 
@@ -225,17 +231,17 @@ model MpzLead {
 }
 
 model MpzTask {
-  id          String    @id @default(cuid())
+  id          String          @id @default(cuid())
   title       String
   description String?
-  status      String    @default("pending")
-  priority    String    @default("medium")
+  status      MpzTaskStatus   @default(pending)
+  priority    MpzTaskPriority @default(medium)
   assignedTo  String
   leadId      String?
   dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lead        MpzLead?  @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  lead        MpzLead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
   @@index([leadId])
   @@index([status])
@@ -259,18 +265,125 @@ model MpzActivity {
 /* ═══════════════════════════════════════════════════════════════ */
 
 model ContactMessage {
-  id          String   @id @default(cuid())
+  id           String        @id @default(cuid())
   customerName String
   customerEmail String
-  subject     String
-  message     String
-  priority    String   @default("normal")
-  status      String   @default("unread")
-  assignedTo  String   @default("both")
-  reply       String?
-  repliedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  subject      String
+  message      String
+  priority     String        @default("normal")
+  status       ContactStatus @default(new)
+  assignedTo   String        @default("both")
+  reply        String?
+  repliedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
+  @@index([customerEmail])
   @@index([status])
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Enums                                                         */
+/* ═══════════════════════════════════════════════════════════════ */
+
+enum ProjectStatus {
+  active
+  completed
+  paused
+  archived
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum UserRole {
+  master_admin
+  admin
+  manager
+  member
+}
+
+enum CustomerPlan {
+  free
+  pro
+  enterprise
+}
+
+enum CustomerStatus {
+  active
+  inactive
+}
+
+enum JourneyPhase {
+  discovery
+  strategy
+  delivery
+  launch
+  growth
+}
+
+enum JourneyStatus {
+  active
+  completed
+  paused
+  on_hold
+}
+
+enum MpzLeadStage {
+  new_lead
+  mockup_needed
+  mockup_sent
+  engaged
+  video_sent
+  proof_stage
+  hot_lead
+  call_scheduled
+  closed_won
+  closed_lost
+  retention
+  contacted
+  qualified
+  proposal_sent
+  mockup_ready
+  mockup_delivered
+  revision
+}
+
+enum MpzTaskStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum MpzTaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum ContactStatus {
+  new
+  in_progress
+  replied
+  closed
+  spam
 }

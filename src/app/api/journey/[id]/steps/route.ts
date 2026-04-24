@@ -46,10 +46,10 @@ export async function PUT(
     })
 
     const completedCount = allSteps.filter((s) => s.status === 'completed').length
-    const phases = ['handover', 'game_plan', 'technical', 'live']
+    const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
 
     // Determine current phase based on first non-completed step
-    let currentPhase = 'handover'
+    let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
     for (const phase of phases) {
       const phaseSteps = allSteps.filter((s) => s.phase === phase)
       const phasePending = phaseSteps.some((s) => s.status !== 'completed')
@@ -62,7 +62,7 @@ export async function PUT(
     // Determine overall status
     const allCompleted = completedCount === allSteps.length
     const anyInProgress = allSteps.some((s) => s.status === 'in_progress')
-    const overallStatus = allCompleted ? 'completed' : anyInProgress ? 'in_progress' : 'in_progress'
+    const overallStatus: 'active' | 'completed' | 'paused' | 'on_hold' = allCompleted ? 'completed' : anyInProgress ? 'active' : 'active'
 
     // Update journey
     await db.clientJourney.update({
@@ -129,8 +129,8 @@ export async function POST(
     })
     const completedCount = allSteps.filter((s) => s.status === 'completed').length
     const allCompleted = completedCount === allSteps.length
-    const phases = ['handover', 'game_plan', 'technical', 'live']
-    let currentPhase = 'handover'
+    const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+    let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
     for (const phase of phases) {
       const phaseSteps = allSteps.filter((s) => s.phase === phase)
       if (phaseSteps.some((s) => s.status !== 'completed')) {
@@ -144,7 +144,7 @@ export async function POST(
       data: {
         completedSteps: completedCount,
         currentPhase,
-        overallStatus: allCompleted ? 'completed' : 'in_progress',
+        overallStatus: (allCompleted ? 'completed' : 'active') as 'active' | 'completed' | 'paused' | 'on_hold',
       },
     })
 

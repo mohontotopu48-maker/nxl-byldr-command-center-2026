@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomInt } from 'crypto'
 import { db, isDbAvailable } from '@/lib/db'
 import { storeInMemoryOtp } from '@/lib/customer-store'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 function generateOTP(): string {
   return randomInt(100000, 1000000).toString()
@@ -9,6 +10,15 @@ function generateOTP(): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`forgot-password:${ip}`, { limit: 3, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const { email } = await request.json()
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {

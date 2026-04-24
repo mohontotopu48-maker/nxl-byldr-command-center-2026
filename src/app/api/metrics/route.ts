@@ -10,17 +10,31 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
 
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
+    const skip = (page - 1) * limit
+
     const where: Record<string, unknown> = {}
     if (category) {
       where.category = category
     }
 
-    const metrics = await db.metric.findMany({
-      where,
-      orderBy: { recordedAt: 'desc' },
-    })
+    const whereClause = Object.keys(where).length > 0 ? where : undefined
 
-    return NextResponse.json(metrics)
+    const [total, metrics] = await Promise.all([
+      db.metric.count({ where: whereClause }),
+      db.metric.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { recordedAt: 'desc' },
+      }),
+    ])
+
+    return NextResponse.json({
+      data: metrics,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    })
   } catch (error) {
     console.error('Error fetching metrics:', error)
     return NextResponse.json(

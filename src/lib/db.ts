@@ -1,6 +1,8 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import pg from "pg";
+import { runSecurityChecks } from '@/lib/security-check'
+runSecurityChecks()
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

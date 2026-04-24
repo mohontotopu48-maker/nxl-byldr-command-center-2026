@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
 
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
+    const skip = (page - 1) * limit
+
     const where: Record<string, unknown> = {}
 
     if (projectId) {
@@ -18,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      const validStatuses = ['todo', 'in_progress', 'review', 'done']
+      const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled']
       if (!validStatuses.includes(status)) {
         return NextResponse.json(
           { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
@@ -28,20 +32,28 @@ export async function GET(request: NextRequest) {
       where.status = status
     }
 
-    const tasks = await db.task.findMany({
-      where,
-      include: {
-        project: {
-          select: { id: true, name: true },
+    const [total, tasks] = await Promise.all([
+      db.task.count({ where: Object.keys(where).length > 0 ? where : undefined }),
+      db.task.findMany({
+        where: Object.keys(where).length > 0 ? where : undefined,
+        include: {
+          project: {
+            select: { id: true, name: true },
+          },
+          assignee: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
         },
-        assignee: {
-          select: { id: true, name: true, email: true, avatar: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
 
-    return NextResponse.json(tasks)
+    return NextResponse.json({
+      data: tasks,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    })
   } catch (error) {
     console.error('Error fetching tasks:', error)
     return NextResponse.json(
@@ -91,7 +103,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const validStatuses = ['todo', 'in_progress', 'review', 'done']
+    const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled']
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
@@ -111,7 +123,7 @@ export async function POST(request: NextRequest) {
       data: {
         title: title.trim(),
         description: description ?? null,
-        status: status ?? 'todo',
+        status: status ?? 'pending',
         priority: priority ?? 'medium',
         projectId,
         assigneeId: assigneeId ?? null,

@@ -2,9 +2,19 @@ import { NextResponse } from 'next/server'
 import { db, isDbAvailable } from '@/lib/db'
 import { compare } from 'bcryptjs'
 import { getFallbackCustomer } from '@/lib/customer-store'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`customer-login:${ip}`, { limit: 10, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const { email, password } = await request.json()
 
     if (!email || !password) {

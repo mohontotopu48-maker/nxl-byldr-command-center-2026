@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, isDbAvailable } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { getInMemoryOtp, deleteInMemoryOtp, getFallbackCustomer } from '@/lib/customer-store'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`reset-password:${ip}`, { limit: 3, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many reset attempts. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const { email, newPassword } = await request.json()
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireMasterAdmin } from '@/lib/auth-guard'
 
-const LEAD_DATA = [
+type LeadStage = 'new_lead' | 'mockup_needed' | 'mockup_sent' | 'engaged' | 'video_sent' | 'proof_stage' | 'hot_lead' | 'call_scheduled' | 'closed_won' | 'closed_lost' | 'retention' | 'contacted' | 'qualified' | 'proposal_sent' | 'mockup_ready' | 'mockup_delivered' | 'revision'
+type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
+
+const LEAD_DATA: Array<{ name: string; businessName: string; phone: string; email: string; serviceType: string; stage: LeadStage; assignedTo: string; mockupReady: boolean; automationStarted: boolean; automationDay: number; createdAt: Date }> = [
   { name: 'Mike Johnson', businessName: 'Apex Roofing Co', phone: '(555) 123-4567', email: 'mike@apexroofing.com', serviceType: 'Roofing', stage: 'new_lead', assignedTo: 'Sal', mockupReady: false, automationStarted: false, automationDay: 0, createdAt: new Date(Date.now() - 1000 * 60 * 30) },
   { name: 'Sarah Chen', businessName: 'FlowFix Plumbing', phone: '(555) 234-5678', email: 'sarah@flowfix.com', serviceType: 'Plumbing', stage: 'mockup_needed', assignedTo: 'Geo', mockupReady: false, automationStarted: false, automationDay: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2) },
   { name: 'David Martinez', businessName: 'CoolAir HVAC', phone: '(555) 345-6789', email: 'david@coolair.com', serviceType: 'HVAC', stage: 'mockup_sent', assignedTo: 'Sal', mockupReady: true, automationStarted: true, automationDay: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48) },
@@ -17,7 +21,7 @@ const LEAD_DATA = [
   { name: 'Nancy Liu', businessName: 'QuickFix Handyman', phone: '(555) 333-4444', email: 'nancy@quickfix.com', serviceType: 'Remodeling', stage: 'new_lead', assignedTo: 'Sal', mockupReady: false, automationStarted: false, automationDay: 0, createdAt: new Date(Date.now() - 1000 * 60 * 15) },
 ]
 
-const TASK_DATA = [
+const TASK_DATA: Array<{ title: string; description: string; status: TaskStatus; priority: TaskPriority; assignedTo: string; leadEmail?: string; dueDate?: Date }> = [
   { title: 'Build Mockup Site (24h)', description: 'Create custom mockup site for FlowFix Plumbing', status: 'pending', priority: 'high', assignedTo: 'Geo', leadEmail: 'sarah@flowfix.com', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 20) },
   { title: 'Call Hot Lead: Robert Kim', description: 'Elite Remodeling replied! Call within 5 minutes', status: 'pending', priority: 'urgent', assignedTo: 'Sal', leadEmail: 'robert@eliteremodel.com', dueDate: new Date(Date.now() + 1000 * 60 * 5) },
   { title: 'Check automation health', description: 'Verify all active automation sequences are running', status: 'in_progress', priority: 'medium', assignedTo: 'Geo' },
@@ -54,14 +58,14 @@ export async function POST(request: NextRequest) {
     }
 
     for (const task of TASK_DATA) {
-      const { leadEmail, ...taskData } = task as Record<string, unknown> & { leadEmail?: string }
+      const { leadEmail, dueDate, ...taskData } = task
       const baseData = {
-        title: String(taskData.title),
-        description: String(taskData.description ?? ''),
-        status: String(taskData.status ?? 'pending'),
-        priority: String(taskData.priority ?? 'medium'),
-        assignedTo: String(taskData.assignedTo ?? ''),
-        dueDate: taskData.dueDate ? new Date(taskData.dueDate as string) : null,
+        title: taskData.title,
+        description: taskData.description ?? '',
+        status: taskData.status,
+        priority: taskData.priority,
+        assignedTo: taskData.assignedTo,
+        dueDate: dueDate ?? null,
       }
       if (leadEmail) {
         const lead = await db.mpzLead.findFirst({ where: { email: leadEmail } })

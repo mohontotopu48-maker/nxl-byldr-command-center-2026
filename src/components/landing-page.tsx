@@ -303,7 +303,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         <motion.div variants={fadeUp} className="flex items-center gap-3 mb-6">
           <div className="relative">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-lg shadow-primary/10">
-              <img src="https://i.ibb.co.com/mV5xXLnB/VSUAL.png" alt="VSUAL" className="h-8 w-8 object-contain" />
+              <img src="/images/vsual-logo.png" alt="VSUAL" className="h-8 w-8 object-contain" />
             </div>
             <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary animate-pulse-slow" />
           </div>
@@ -557,7 +557,7 @@ export function LandingPage({ onLogin }: LandingPageProps) {
         {/* Footer */}
         <motion.div variants={fadeUp} className="mt-8 flex flex-col sm:flex-row items-center gap-3 text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src="https://i.ibb.co.com/2R1C5xG/image.png" alt="CA Logo" className="h-5 w-5 object-contain rounded" />
+            <img src="/images/ca-logo.png" alt="CA Logo" className="h-5 w-5 object-contain rounded" />
             <span className="text-xs">Powered by <span className="text-primary font-semibold">VSUAL</span> — Digital Media · Promotional Marketing Agency</span>
           </div>
           <span className="hidden sm:block text-border">|</span>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { compare } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 import { isDbAvailable, db } from '@/lib/db'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 // Master admin bcrypt hashes (fallback when DATABASE_URL is not set)
 const MASTER_ADMIN_HASHES: Record<string, string> = {
@@ -11,6 +12,15 @@ const MASTER_ADMIN_HASHES: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`login:${ip}`, { limit: 10, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const { email, password } = await request.json()
 
     if (!email || !password) {

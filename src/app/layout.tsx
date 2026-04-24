@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   description:
     "VSUAL Digital Media — Growth, Marketing & AI Automation Command Center for project management, team collaboration, and lead activity tracking.",
   icons: {
-    icon: "https://i.ibb.co.com/mV5xXLnB/VSUAL.png",
+    icon: "/images/vsual-logo.png",
   },
 };
 

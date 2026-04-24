@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
 import { db, isDbAvailable } from '@/lib/db'
 import { getInMemoryOtp, deleteInMemoryOtp } from '@/lib/customer-store'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`verify-otp:${ip}`, { limit: 10, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many verification attempts. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const { email, otp } = await request.json()
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {

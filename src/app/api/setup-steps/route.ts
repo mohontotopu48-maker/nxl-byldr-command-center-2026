@@ -10,20 +10,20 @@ export async function GET() {
     // If no steps exist, initialize the default 13 steps
     if (steps.length === 0) {
       const defaults = [
-        { stepNumber: 1, title: 'Business Information Gathered', phase: 'handover', status: 'completed' },
-        { stepNumber: 2, title: 'Access Credentials Received', phase: 'handover', status: 'completed' },
-        { stepNumber: 3, title: 'Brand Assets & Logo Collected', phase: 'handover', status: 'in_progress' },
-        { stepNumber: 4, title: 'Target Audience Defined', phase: 'game_plan', status: 'pending' },
-        { stepNumber: 5, title: 'Service Areas Mapped', phase: 'game_plan', status: 'pending' },
-        { stepNumber: 6, title: 'Competitor Analysis Complete', phase: 'game_plan', status: 'pending' },
-        { stepNumber: 7, title: 'Google Business Profile Optimized', phase: 'technical', status: 'pending' },
-        { stepNumber: 8, title: 'Facebook Business Page Created', phase: 'technical', status: 'pending' },
-        { stepNumber: 9, title: 'Ad Account Setup & Verification', phase: 'technical', status: 'pending' },
-        { stepNumber: 10, title: 'CRM & Lead Tracking Installed', phase: 'technical', status: 'pending' },
-        { stepNumber: 11, title: 'Landing Page Built', phase: 'technical', status: 'pending' },
-        { stepNumber: 12, title: 'Ad Campaigns Launched', phase: 'live', status: 'pending' },
-        { stepNumber: 13, title: 'Lead Machine Running', phase: 'live', status: 'pending' },
-      ]
+        { stepNumber: 1, title: 'Business Information Gathered', phase: 'discovery', status: 'completed' },
+        { stepNumber: 2, title: 'Access Credentials Received', phase: 'discovery', status: 'completed' },
+        { stepNumber: 3, title: 'Brand Assets & Logo Collected', phase: 'discovery', status: 'in_progress' },
+        { stepNumber: 4, title: 'Target Audience Defined', phase: 'strategy', status: 'pending' },
+        { stepNumber: 5, title: 'Service Areas Mapped', phase: 'strategy', status: 'pending' },
+        { stepNumber: 6, title: 'Competitor Analysis Complete', phase: 'strategy', status: 'pending' },
+        { stepNumber: 7, title: 'Google Business Profile Optimized', phase: 'delivery', status: 'pending' },
+        { stepNumber: 8, title: 'Facebook Business Page Created', phase: 'delivery', status: 'pending' },
+        { stepNumber: 9, title: 'Ad Account Setup & Verification', phase: 'delivery', status: 'pending' },
+        { stepNumber: 10, title: 'CRM & Lead Tracking Installed', phase: 'delivery', status: 'pending' },
+        { stepNumber: 11, title: 'Landing Page Built', phase: 'delivery', status: 'pending' },
+        { stepNumber: 12, title: 'Ad Campaigns Launched', phase: 'launch', status: 'pending' },
+        { stepNumber: 13, title: 'Lead Machine Running', phase: 'launch', status: 'pending' },
+      ] as Array<{ stepNumber: number; title: string; phase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'; status: string }>
       
       try {
         await db.setupStep.createMany({ data: defaults, skipDuplicates: true })

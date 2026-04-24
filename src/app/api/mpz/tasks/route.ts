@@ -2,16 +2,30 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
 
   try {
-    const tasks = await db.mpzTask.findMany({
-      include: { lead: true },
-      orderBy: { createdAt: 'desc' },
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50))
+    const skip = (page - 1) * limit
+
+    const [total, tasks] = await Promise.all([
+      db.mpzTask.count(),
+      db.mpzTask.findMany({
+        include: { lead: true },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+    return NextResponse.json({
+      data: tasks,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
-    return NextResponse.json(tasks)
   } catch (error) {
     console.error('GET /api/mpz/tasks error:', error)
     return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 })

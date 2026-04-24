@@ -3,9 +3,19 @@ import { db, isDbAvailable } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 import { addInMemoryCustomer, getFallbackCustomer, isFallbackCustomer } from '@/lib/customer-store'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = rateLimit(`customer-register:${ip}`, { limit: 5, windowMs: 60000 })
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+      })
+    }
+
     const { name, email, password, company, phone } = await request.json()
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {

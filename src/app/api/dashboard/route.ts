@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       db.project.count(),
       db.task.count({ where: { status: 'in_progress' } }),
       db.task.count(),
-      db.task.count({ where: { status: 'done' } }),
+      db.task.count({ where: { status: 'completed' } }),
       db.teamMember.count(),
       db.customer.count(),
       db.activity.findMany({

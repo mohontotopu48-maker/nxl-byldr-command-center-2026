@@ -1,8 +1,9 @@
 /**
  * Authenticated fetch utility for client-side API calls.
- * Automatically includes Bearer token from localStorage.
+ * Automatically includes signed JWT Bearer token from localStorage.
  */
 import { MASTER_ADMIN_EMAILS } from './constants'
+import { signToken } from './jwt'
 
 interface AuthData {
   name?: string
@@ -21,14 +22,26 @@ function getStoredAuth(): AuthData | null {
   return null
 }
 
-function buildBearerToken(auth: AuthData): string {
-  // Base64-encode a lightweight JSON payload for the Authorization header
-  const payload = btoa(JSON.stringify({
-    email: auth.email || '',
-    role: auth.role || 'member',
-    loggedIn: true,
-  }))
-  return `Bearer ${payload}`
+let cachedToken: string | null = null
+let cachedTokenEmail: string | null = null
+
+async function buildBearerToken(auth: AuthData): Promise<string> {
+  const email = auth.email || ''
+  // Return cached token if email matches and token exists
+  if (cachedToken && cachedTokenEmail === email) return cachedToken
+  try {
+    const token = await signToken({
+      email,
+      role: auth.role || 'member',
+      loggedIn: true,
+    })
+    cachedToken = token
+    cachedTokenEmail = email
+    return token
+  } catch {
+    // Fallback to base64 if JWT signing fails (shouldn't happen)
+    return `Bearer ${btoa(JSON.stringify({ email, role: auth.role || 'member', loggedIn: true }))}`
+  }
 }
 
 /**
@@ -44,7 +57,8 @@ export async function apiFetch(
 
   // Set auth header if user is logged in
   if (auth?.loggedIn) {
-    headers.set('Authorization', buildBearerToken(auth))
+    const token = await buildBearerToken(auth)
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   // Set content-type for JSON bodies if not already set

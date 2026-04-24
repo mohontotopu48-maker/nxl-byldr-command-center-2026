@@ -87,7 +87,7 @@ CURRENT PHASE: ${journey.currentPhase}
 CURRENT STEP: ${currentStep ? `#${currentStep.stepNumber} "${currentStep.title}"` : 'All done'}
 
 Generate a short, professional alert message for the client. Rules:
-- If there's a specific action needed from the client (like an OTP code, approval, or info), start with "ACTION REQUIRED:" 
+- If there's a specific action needed from the client (like an OTP code, approval, or info), start with "ACTION REQUIRED:"
 - If everything is on track, say "All Systems Go — Project on Schedule."
 - Keep under 80 characters.
 - Do NOT use quotes or special formatting.`
@@ -101,7 +101,7 @@ Generate a short, professional alert message for the client. Rules:
           max_tokens: 100,
         })
         aiResponse = completion.choices[0]?.message?.content || 'All Systems Go — Project on Schedule.'
-        
+
         // Update or create the alert (don't deleteMany — use upsert pattern)
         const isActive = aiResponse.includes('ACTION REQUIRED')
         const existingAlert = journey.alerts.length > 0 ? journey.alerts[0] : null
@@ -229,8 +229,8 @@ Rules:
         // Recalculate journey
         const allSteps = await db.clientSetupStep.findMany({ where: { journeyId }, orderBy: { stepNumber: 'asc' } })
         const newCompleted = allSteps.filter(s => s.status === 'completed').length
-        const phases = ['handover', 'game_plan', 'technical', 'live']
-        let currentPhase = 'handover'
+        const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+        let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
         for (const phase of phases) {
           if (allSteps.filter(s => s.phase === phase).some(s => s.status !== 'completed')) {
             currentPhase = phase
@@ -240,7 +240,7 @@ Rules:
 
         await db.clientJourney.update({
           where: { id: journeyId },
-          data: { completedSteps: newCompleted, currentPhase, overallStatus: newCompleted === totalSteps ? 'completed' : 'in_progress' },
+          data: { completedSteps: newCompleted, currentPhase, overallStatus: (newCompleted === totalSteps ? 'completed' : 'active') as 'active' | 'completed' | 'paused' | 'on_hold' },
         })
 
         aiResponse = `Confirmed ${appliedUpdates.length} step advance(s). ${appliedUpdates.map(u => `Step ${u.stepId.split('_')[0]} → ${u.status}`).join(', ')}`

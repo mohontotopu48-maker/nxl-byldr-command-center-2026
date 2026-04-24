@@ -1,6 +1,6 @@
-export const VSUAL_LOGO = "https://i.ibb.co.com/mV5xXLnB/VSUAL.png";
+export const VSUAL_LOGO = "/images/vsual-logo.png";
 export const VSUAL_COVER = "/vsual-brand-cover.jpg";
-export const CA_LOGO = "https://i.ibb.co.com/2R1C5xG/image.png";
+export const CA_LOGO = "/images/ca-logo.png";
 
 export const BRAND = {
   name: "VSUAL NXL BYLDR",
