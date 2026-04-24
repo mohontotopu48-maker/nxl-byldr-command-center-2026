@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDbAvailable } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
@@ -29,6 +29,11 @@ export async function POST(request: NextRequest) {
     // Block master admin emails from registering as customers
     if (MASTER_ADMIN_EMAILS.includes(normalizedEmail as typeof MASTER_ADMIN_EMAILS[number])) {
       return NextResponse.json({ error: 'This email is reserved for admin use.' }, { status: 403 })
+    }
+
+    // Check database availability
+    if (!isDbAvailable()) {
+      return NextResponse.json({ error: 'Service temporarily unavailable. Database is not configured.' }, { status: 503 })
     }
 
     // Check if customer already exists
