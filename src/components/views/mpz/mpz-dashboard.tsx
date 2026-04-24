@@ -6,6 +6,7 @@ import { Users, Flame, Zap, TrendingUp, ArrowRight, Activity, AlertTriangle } fr
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { apiFetch } from '@/lib/api-client'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getStageLabel, getStageBgClass, getTimeAgo, PIPELINE_STAGES, type DashboardStats, type MpzLead } from './constants'
 
@@ -26,7 +27,7 @@ export function MpzDashboard({ onSelectLead, onTabChange }: MpzDashboardProps) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch('/api/mpz/dashboard')
+      const res = await apiFetch('/api/mpz/dashboard')
       if (res.ok) {
         const data = await res.json()
         setStats(data)

@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import {
   Dialog,
   DialogContent,
@@ -128,7 +129,7 @@ export function TeamView() {
 
   const fetchMembers = useCallback(async () => {
     try {
-      const res = await fetch('/api/team')
+      const res = await apiFetch('/api/team')
       if (res.ok) {
         const data = await res.json()
         setMembers(data)
@@ -152,7 +153,7 @@ export function TeamView() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/team', {
+      const res = await apiFetch('/api/team', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +184,7 @@ export function TeamView() {
   const confirmDeleteMember = async () => {
     if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/team/${deleteTarget.id}`, {
+      const res = await apiFetch(`/api/team/${deleteTarget.id}`, {
         method: 'DELETE',
       })
       if (res.ok) {

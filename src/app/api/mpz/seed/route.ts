@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { checkRequestAuth } from '@/lib/auth-guard'
+import { requireMasterAdmin } from '@/lib/auth-guard'
 
 const LEAD_DATA = [
   { name: 'Mike Johnson', businessName: 'Apex Roofing Co', phone: '(555) 123-4567', email: 'mike@apexroofing.com', serviceType: 'Roofing', stage: 'new_lead', assignedTo: 'Sal', mockupReady: false, automationStarted: false, automationDay: 0, createdAt: new Date(Date.now() - 1000 * 60 * 30) },
@@ -40,8 +40,8 @@ const ACTIVITY_DATA = [
 ]
 
 export async function POST(request: NextRequest) {
-  // Auth check
-  const auth = await checkRequestAuth(request)
+  // Auth check — master admin only for destructive seed operation
+  const auth = await requireMasterAdmin(request)
   if (!auth.authorized) return auth.response
 
   try {

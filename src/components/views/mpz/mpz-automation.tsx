@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { AUTOMATION_STEPS, getStageLabel, getStageBgClass, type MpzLead } from './constants'
 
 const STEP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -24,8 +25,8 @@ export function MpzAutomation() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/mpz/leads')
-      .then(r => r.json())
+    apiFetch('/api/mpz/leads')
+      .then(r => r.ok ? r.json() : [])
       .then(setLeads)
       .catch(() => setLeads([]))
       .finally(() => setLoading(false))

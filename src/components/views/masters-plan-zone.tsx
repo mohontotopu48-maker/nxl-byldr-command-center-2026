@@ -9,6 +9,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { MpzDashboard } from './mpz/mpz-dashboard'
 import { MpzPipeline } from './mpz/mpz-pipeline'
 import { MpzLeads } from './mpz/mpz-leads'
@@ -48,7 +49,7 @@ export function MastersPlanZone() {
 
   const handleSeed = async () => {
     try {
-      const res = await fetch('/api/mpz/seed', { method: 'POST' })
+      const res = await apiFetch('/api/mpz/seed', { method: 'POST' })
       if (!res.ok) {
         toast.error('Failed to seed data')
         return

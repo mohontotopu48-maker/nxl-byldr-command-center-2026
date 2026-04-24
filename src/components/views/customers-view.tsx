@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import {
   Dialog,
   DialogContent,
@@ -112,7 +113,7 @@ export function CustomersView() {
 
   const fetchCustomers = useCallback(async () => {
     try {
-      const res = await fetch('/api/customers')
+      const res = await apiFetch('/api/customers')
       if (res.ok) {
         const data = await res.json()
         setCustomers(data)
@@ -136,7 +137,7 @@ export function CustomersView() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/customers', {
+      const res = await apiFetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -168,7 +169,7 @@ export function CustomersView() {
   const confirmDeleteCustomer = async () => {
     if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/customers/${deleteTarget.id}`, {
+      const res = await apiFetch(`/api/customers/${deleteTarget.id}`, {
         method: 'DELETE',
       })
       if (res.ok) {

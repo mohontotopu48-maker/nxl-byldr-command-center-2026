@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { apiFetch } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { PIPELINE_STAGES, SERVICE_TYPES, getStageBgClass, getTimeAgo, type MpzLead } from './constants'
@@ -40,7 +41,7 @@ export function MpzLeads({ onSelectLead, refreshTrigger }: MpzLeadsProps) {
   const fetchLeads = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await fetch('/api/mpz/leads')
+      const r = await apiFetch('/api/mpz/leads')
       if (r.ok) {
         const data = await r.json()
         setLeads(data)
@@ -59,7 +60,7 @@ export function MpzLeads({ onSelectLead, refreshTrigger }: MpzLeadsProps) {
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await fetch(`/api/mpz/leads/${id}`, { method: 'DELETE' })
+      await apiFetch(`/api/mpz/leads/${id}`, { method: 'DELETE' })
       setLeads(prev => prev.filter(l => l.id !== id))
       toast.success('Lead deleted')
     } catch {

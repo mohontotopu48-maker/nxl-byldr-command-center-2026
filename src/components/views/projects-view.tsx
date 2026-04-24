@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import {
   Dialog,
   DialogContent,
@@ -133,7 +134,7 @@ export function ProjectsView() {
   /* --- fetch projects ---------------------------------------------------- */
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await fetch('/api/projects')
+      const res = await apiFetch('/api/projects')
       if (res.ok) {
         const data: ApiProject[] = await res.json()
         setProjects(data)
@@ -160,7 +161,7 @@ export function ProjectsView() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/projects', {
+      const res = await apiFetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -195,7 +196,7 @@ export function ProjectsView() {
   const confirmDeleteProject = async () => {
     if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/projects/${deleteTarget.id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/projects/${deleteTarget.id}`, { method: 'DELETE' })
       if (res.ok) {
         toast.success(`"${deleteTarget.name}" deleted`)
         fetchProjects()

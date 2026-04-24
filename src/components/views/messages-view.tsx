@@ -40,6 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { apiFetch } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -162,7 +163,7 @@ export function MessagesView() {
       const params = new URLSearchParams()
       if (activeFilter !== 'all') params.set('status', activeFilter)
       const query = params.toString() ? `?${params.toString()}` : ''
-      const res = await fetch(`/api/contact${query}`)
+      const res = await apiFetch(`/api/contact${query}`)
       if (res.ok) {
         const data = await res.json()
         setMessages(data)
@@ -202,7 +203,7 @@ export function MessagesView() {
 
     // Auto-mark as read if unread
     if (msg.status === 'unread') {
-      fetch(`/api/contact/${msg.id}`, {
+      apiFetch(`/api/contact/${msg.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'read' }),
@@ -227,7 +228,7 @@ export function MessagesView() {
 
     setSendingReply(true)
     try {
-      const res = await fetch(`/api/contact/${selectedMessage.id}`, {
+      const res = await apiFetch(`/api/contact/${selectedMessage.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reply: replyText.trim() }),
@@ -255,7 +256,7 @@ export function MessagesView() {
     if (!selectedMessage || selectedMessage.status === 'read') return
 
     try {
-      const res = await fetch(`/api/contact/${selectedMessage.id}`, {
+      const res = await apiFetch(`/api/contact/${selectedMessage.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'read' }),
@@ -281,7 +282,7 @@ export function MessagesView() {
 
     setDeleting(true)
     try {
-      const res = await fetch(`/api/contact/${deleteTarget.id}`, {
+      const res = await apiFetch(`/api/contact/${deleteTarget.id}`, {
         method: 'DELETE',
       })
 

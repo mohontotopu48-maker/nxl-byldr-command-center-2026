@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { getStageLabel, getStageBgClass, isOverdue, PRIORITY_COLORS, type MpzLead, type MpzTask } from './constants'
 
 interface MpzAlertsProps {
@@ -23,8 +24,8 @@ export function MpzAlerts({ onSelectLead }: MpzAlertsProps) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/mpz/leads').then(r => r.ok ? r.json() : []),
-      fetch('/api/mpz/tasks').then(r => r.ok ? r.json() : []),
+      apiFetch('/api/mpz/leads').then(r => r.ok ? r.json() : []),
+      apiFetch('/api/mpz/tasks').then(r => r.ok ? r.json() : []),
     ])
       .then(([l, t]) => { setLeads(l); setTasks(t) })
       .catch(() => {})

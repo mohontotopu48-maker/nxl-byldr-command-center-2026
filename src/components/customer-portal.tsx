@@ -36,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { apiFetch } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 import { BRAND, VSUAL_LOGO } from '@/lib/constants'
 import { toast } from 'sonner'
@@ -395,8 +396,8 @@ function DashboardTab({ auth }: { auth: { name: string; email: string; role: str
   const fetchAll = useCallback(async () => {
     try {
       const [journeyRes, alertRes] = await Promise.all([
-        fetch('/api/journey'),
-        fetch('/api/alert-bar'),
+        apiFetch('/api/journey'),
+        apiFetch('/api/alert-bar'),
       ])
 
       if (journeyRes.ok) {
@@ -675,7 +676,7 @@ function MyJourneyTab({ auth }: { auth: { name: string; email: string; role: str
 
   const fetchJourney = useCallback(async () => {
     try {
-      const res = await fetch('/api/journey')
+      const res = await apiFetch('/api/journey')
       if (res.ok) {
         const data = await res.json()
         const journeys: ClientJourney[] = Array.isArray(data) ? data : []
@@ -966,7 +967,7 @@ function ContactUsTab({ auth, onSwitchToProfile }: { auth: { name: string; email
   // Fetch messages
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await fetch(`/api/contact?customerEmail=${encodeURIComponent(auth.email)}`)
+      const res = await apiFetch(`/api/contact?customerEmail=${encodeURIComponent(auth.email)}`)
       if (res.ok) {
         const data = await res.json()
         setMessages(Array.isArray(data) ? data : [])
@@ -991,7 +992,7 @@ function ContactUsTab({ auth, onSwitchToProfile }: { auth: { name: string; email
 
     setSending(true)
     try {
-      const res = await fetch('/api/contact', {
+      const res = await apiFetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1350,7 +1351,7 @@ function MyProfileTab({ auth }: { auth: { name: string; email: string; role: str
 
   const fetchProfile = useCallback(async () => {
     try {
-      const res = await fetch('/api/customers')
+      const res = await apiFetch('/api/customers')
       if (res.ok) {
         const json = await res.json()
         const customers: CustomerProfile[] = Array.isArray(json) ? json : []

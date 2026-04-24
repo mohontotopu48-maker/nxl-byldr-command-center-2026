@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
 // GET /api/setup-steps — return all 13 steps ordered by stepNumber
 export async function GET() {
@@ -42,6 +43,9 @@ export async function GET() {
 
 // POST /api/setup-steps — update step status
 export async function POST(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { stepId, status } = await request.json()
     

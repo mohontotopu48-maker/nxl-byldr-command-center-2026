@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { PRIORITY_COLORS, isOverdue, type MpzTask } from './constants'
 
 export function MpzTasks() {
@@ -19,7 +20,7 @@ export function MpzTasks() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/mpz/tasks')
+    apiFetch('/api/mpz/tasks')
       .then(r => r.ok ? r.json() : [])
       .then(setTasks)
       .catch(() => setTasks([]))
@@ -28,7 +29,7 @@ export function MpzTasks() {
 
   const handleComplete = async (taskId: string) => {
     try {
-      const res = await fetch(`/api/mpz/tasks/${taskId}/complete`, { method: 'PUT' })
+      const res = await apiFetch(`/api/mpz/tasks/${taskId}/complete`, { method: 'PUT' })
       if (res.ok) {
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t))
         toast.success('Task completed! 🎉')
@@ -42,7 +43,7 @@ export function MpzTasks() {
 
   const handleDelete = async (taskId: string) => {
     try {
-      const res = await fetch(`/api/mpz/tasks/${taskId}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/mpz/tasks/${taskId}`, { method: 'DELETE' })
       if (res.ok) {
         setTasks(prev => prev.filter(t => t.id !== taskId))
         toast.success('Task deleted')

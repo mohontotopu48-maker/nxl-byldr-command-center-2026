@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { SERVICE_TYPES } from './constants'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 
 interface MpzNewLeadProps {
   open: boolean
@@ -40,7 +41,7 @@ export function MpzNewLead({ open, onClose, onCreated }: MpzNewLeadProps) {
     }
     setLoading(true)
     try {
-      const res = await fetch('/api/mpz/leads', {
+      const res = await apiFetch('/api/mpz/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

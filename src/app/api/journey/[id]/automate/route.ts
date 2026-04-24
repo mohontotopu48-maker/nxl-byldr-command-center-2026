@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/journey/[id]/automate — AI-powered automation for a client journey
@@ -7,6 +8,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { id: journeyId } = await params
     const { action } = await request.json()

@@ -38,6 +38,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { MASTER_ADMIN_EMAILS } from '@/lib/constants'
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -207,9 +208,9 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
   const fetchAll = useCallback(async () => {
     try {
       const [dashRes, journeyRes, alertRes] = await Promise.all([
-        fetch('/api/dashboard'),
-        fetch('/api/journey'),
-        fetch('/api/alert-bar'),
+        apiFetch('/api/dashboard'),
+        apiFetch('/api/journey'),
+        apiFetch('/api/alert-bar'),
       ])
       if (dashRes.ok) setStats(await dashRes.json())
       if (journeyRes.ok) {
@@ -220,7 +221,7 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
         const data = await alertRes.json()
         setAlertData(data)
       }
-    } catch { /* empty */ }
+    } catch { toast.error('Failed to load dashboard data') }
     finally { setLoading(false) }
   }, [])
 
@@ -230,7 +231,7 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
   const handleSaveAlert = async () => {
     setAlertSaving(true)
     try {
-      const res = await fetch('/api/alert-bar', {
+      const res = await apiFetch('/api/alert-bar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: alertEditActive, message: alertEditMessage }),
@@ -254,9 +255,12 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
   // Refresh journeys after detail changes
   const refreshJourneys = useCallback(async () => {
     try {
-      const res = await fetch('/api/journey')
-      if (res.ok) setJourneys(await res.json())
-    } catch { /* empty */ }
+      const res = await apiFetch('/api/journey')
+      if (res.ok) {
+        const data = await res.json()
+        setJourneys(Array.isArray(data) ? data : [])
+      }
+    } catch { toast.error('Failed to refresh journeys') }
   }, [])
 
   // Derived stats
@@ -573,7 +577,7 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
     const nextStatus = step.status === 'completed' ? 'pending' : step.status === 'in_progress' ? 'completed' : 'in_progress'
     setStepSaving(step.id)
     try {
-      const res = await fetch(`/api/journey/${journey.id}/steps`, {
+      const res = await apiFetch(`/api/journey/${journey.id}/steps`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stepId: step.id, status: nextStatus }),
@@ -591,7 +595,7 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
   const handleSaveAlert = async () => {
     setAlertSaving(true)
     try {
-      const res = await fetch(`/api/journey/${journey.id}/alert`, {
+      const res = await apiFetch(`/api/journey/${journey.id}/alert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: alertActive, message: alertMessage, priority: alertActive ? 'urgent' : 'normal' }),
@@ -609,7 +613,7 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
     setAiLoading(action)
     setAiResponse('')
     try {
-      const res = await fetch(`/api/journey/${journey.id}/automate`, {
+      const res = await apiFetch(`/api/journey/${journey.id}/automate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -621,7 +625,7 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
         onRefresh()
         // Also refresh steps if auto_advance
         if (action === 'auto_advance' || action === 'generate_alert') {
-          const jRes = await fetch(`/api/journey/${journey.id}`)
+          const jRes = await apiFetch(`/api/journey/${journey.id}`)
           if (jRes.ok) {
             const jData = await jRes.json()
             setSteps(jData.setupSteps || steps)
@@ -829,7 +833,7 @@ function ClientDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) 
   useEffect(() => {
     async function fetchJourney() {
       try {
-        const res = await fetch('/api/journey')
+        const res = await apiFetch('/api/journey')
         if (res.ok) {
           const data = await res.json()
           const journeys: ClientJourney[] = Array.isArray(data) ? data : []
@@ -843,7 +847,7 @@ function ClientDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) 
             setNotFound(true)
           }
         }
-      } catch { /* empty */ }
+      } catch { toast.error('Failed to load journey data') }
       finally { setLoading(false) }
     }
     fetchJourney()

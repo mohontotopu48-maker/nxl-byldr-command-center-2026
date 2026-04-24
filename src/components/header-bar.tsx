@@ -56,11 +56,8 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
   })
 
   const initials = userName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'U'
+    ? userName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border bg-background/80 px-4 backdrop-blur-xl md:px-6">
@@ -123,17 +120,8 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
               Notifications
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 text-foreground focus:bg-accent">
-              <span className="text-sm font-medium">New project assigned</span>
-              <span className="text-xs text-muted-foreground">2 minutes ago</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 text-foreground focus:bg-accent">
-              <span className="text-sm font-medium">Team member joined</span>
-              <span className="text-xs text-muted-foreground">1 hour ago</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 py-3 text-foreground focus:bg-accent">
-              <span className="text-sm font-medium">Task completed</span>
-              <span className="text-xs text-muted-foreground">3 hours ago</span>
+            <DropdownMenuItem disabled className="flex items-center justify-center py-6 text-muted-foreground">
+              <span className="text-sm">No new notifications</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -146,7 +134,7 @@ export function HeaderBar({ activeView, onLogout, isAdmin }: HeaderBarProps) {
               className="relative h-9 gap-2 rounded-full pl-1 pr-3 hover:bg-accent"
             >
               <Avatar className="h-7 w-7">
-                <AvatarImage src="" alt="User" />
+                {userName ? <AvatarImage src={undefined} alt="User" /> : null}
                 <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
                   {initials}
                 </AvatarFallback>

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import {
   PIPELINE_STAGES, AUTOMATION_STEPS, STAGE_ORDER,
   getStageLabel, getStageBgClass, getTimeAgo, type MpzLead,
@@ -40,7 +41,7 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
   useEffect(() => {
     if (open && lead) {
       setLoading(true)
-      fetch(`/api/mpz/leads/${lead.id}`)
+      apiFetch(`/api/mpz/leads/${lead.id}`)
         .then(r => r.ok ? r.json() : null)
         .then(data => setDetailLead(data ?? lead))
         .catch(() => setDetailLead(lead))
@@ -58,7 +59,7 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
     if (!currentLead) return
     setStageLoading(true)
     try {
-      const res = await fetch(`/api/mpz/leads/${currentLead.id}/stage`, {
+      const res = await apiFetch(`/api/mpz/leads/${currentLead.id}/stage`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage }),
@@ -82,7 +83,7 @@ export function MpzLeadDetail({ lead, open, onClose, onUpdated }: MpzLeadDetailP
     if (!currentLead) return
     setMockupLoading(true)
     try {
-      const res = await fetch(`/api/mpz/leads/${currentLead.id}/mockup-ready`, { method: 'PUT' })
+      const res = await apiFetch(`/api/mpz/leads/${currentLead.id}/mockup-ready`, { method: 'PUT' })
       if (res.ok) {
         const updated = await res.json()
         setDetailLead(updated)

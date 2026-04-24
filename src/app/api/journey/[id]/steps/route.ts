@@ -1,12 +1,16 @@
 import type { ClientSetupStep } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
 // PUT /api/journey/[id]/steps — update a specific setup step status
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { id: journeyId } = await params
     const { stepId, status } = await request.json()
@@ -91,6 +95,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { id: journeyId } = await params
     const { updates, triggeredBy } = await request.json()

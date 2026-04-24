@@ -56,7 +56,7 @@ export function CommandCenter({ onLogout }: CommandCenterProps) {
     } catch { /* empty */ }
   }, [])
 
-  const isAdmin = userRole === 'master_admin' || MASTER_ADMIN_EMAILS.includes(userEmail?.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number])
+  const isAdmin = userRole === 'master_admin' || (userEmail ? MASTER_ADMIN_EMAILS.includes(userEmail.toLowerCase() as typeof MASTER_ADMIN_EMAILS[number]) : false)
 
   const ActiveComponent = viewComponents[activeView]
 

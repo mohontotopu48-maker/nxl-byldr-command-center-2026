@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const activities = await db.mpzActivity.findMany({
       include: { lead: { select: { id: true, name: true, businessName: true } } },

@@ -13,6 +13,7 @@ import {
   FolderKanban,
   UserCheck,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -94,9 +95,10 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 export function AnalyticsView() {
   const [dashData, setDashData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/dashboard')
+    apiFetch('/api/dashboard')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data) {
@@ -109,7 +111,7 @@ export function AnalyticsView() {
           })
         }
       })
-      .catch(() => {})
+      .catch(() => { setError('Failed to load data') })
       .finally(() => setLoading(false))
   }, [])
 
@@ -200,6 +202,15 @@ export function AnalyticsView() {
         <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
         <p className="text-sm text-muted-foreground">Track your performance and growth metrics</p>
       </motion.div>
+
+      {/* Error Banner */}
+      {error && (
+        <motion.div variants={itemVariants}>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        </motion.div>
+      )}
 
       {/* Metrics Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-6">

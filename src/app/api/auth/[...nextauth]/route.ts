@@ -90,7 +90,7 @@ const authOptions: NextAuthOptions = {
     },
   },
   session: { strategy: 'jwt' },
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-dev-secret-change-in-production',
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-dev-secret-NOT-FOR-PRODUCTION',
   pages: {
     signIn: '/',
   },

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-client'
 import { PIPELINE_STAGES, getTimeAgo, getStageLabel, getStageBgClass, type MpzLead } from './constants'
 
 interface MpzPipelineProps {
@@ -21,7 +22,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
 
   const fetchLeads = useCallback(async () => {
     try {
-      const res = await fetch('/api/mpz/leads')
+      const res = await apiFetch('/api/mpz/leads')
       if (!res.ok) return
       const data = await res.json()
       setLeads(data)
@@ -38,7 +39,7 @@ export function MpzPipeline({ onSelectLead }: MpzPipelineProps) {
     if (lead.stage === newStage) return
     setMovingLead(lead.id)
     try {
-      const res = await fetch(`/api/mpz/leads/${lead.id}/stage`, {
+      const res = await apiFetch(`/api/mpz/leads/${lead.id}/stage`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage }),
