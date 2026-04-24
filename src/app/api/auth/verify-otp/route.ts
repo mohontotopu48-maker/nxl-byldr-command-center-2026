@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
-import { db } from '@/lib/db'
+import { db, isDbAvailable } from '@/lib/db'
+import { getInMemoryOtp, deleteInMemoryOtp } from '@/lib/customer-store'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +23,45 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.trim().toLowerCase()
 
+    // ═══ IN-MEMORY FALLBACK (when DATABASE_URL is not configured) ═══
+    if (!isDbAvailable()) {
+      const memOtp = getInMemoryOtp(normalizedEmail)
+      if (!memOtp) {
+        return NextResponse.json(
+          { error: 'No OTP found. Please request a new one.' },
+          { status: 400 }
+        )
+      }
+
+      if (new Date() > memOtp.expiresAt) {
+        deleteInMemoryOtp(normalizedEmail)
+        return NextResponse.json(
+          { error: 'OTP has expired. Please request a new one.' },
+          { status: 400 }
+        )
+      }
+
+      const trimmedOtp = otp.trim()
+      const isMatch = memOtp.code.length === trimmedOtp.length &&
+        timingSafeEqual(Buffer.from(memOtp.code), Buffer.from(trimmedOtp))
+
+      if (!isMatch) {
+        return NextResponse.json(
+          { error: 'Invalid OTP. Please try again.' },
+          { status: 400 }
+        )
+      }
+
+      // Mark as verified in memory
+      memOtp.verified = true
+
+      return NextResponse.json({
+        success: true,
+        message: 'OTP verified successfully',
+      })
+    }
+
+    // ═══ DATABASE PATH ═══
     const stored = await db.otpCode.findFirst({
       where: { email: normalizedEmail },
       orderBy: { createdAt: 'desc' },

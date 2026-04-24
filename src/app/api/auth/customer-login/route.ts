@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db, isDbAvailable } from '@/lib/db'
 import { compare } from 'bcryptjs'
+import { getFallbackCustomer } from '@/lib/customer-store'
 
 export async function POST(request: Request) {
   try {
@@ -10,14 +11,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
     }
 
-    // Check database availability
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // ═══ HARDCODED / IN-MEMORY CUSTOMER FALLBACK (works without DATABASE_URL) ═══
+    const fallbackCustomer = getFallbackCustomer(normalizedEmail)
+    if (fallbackCustomer) {
+      const isValid = await compare(password, fallbackCustomer.passwordHash)
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+      }
+      if (fallbackCustomer.status === 'inactive') {
+        return NextResponse.json({ error: 'Your account has been deactivated. Please contact support.' }, { status: 403 })
+      }
+      return NextResponse.json({
+        user: {
+          id: fallbackCustomer.id,
+          name: fallbackCustomer.name,
+          email: fallbackCustomer.email,
+          company: fallbackCustomer.company,
+          phone: fallbackCustomer.phone,
+          role: 'customer',
+          plan: fallbackCustomer.plan,
+        },
+      })
+    }
+
+    // ═══ DATABASE LOOKUP (when DATABASE_URL is configured) ═══
     if (!isDbAvailable()) {
       return NextResponse.json({ error: 'Service temporarily unavailable. Database is not configured.' }, { status: 503 })
     }
 
-    // Find customer by email (not admin TeamMember)
     const customer = await db.customer.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     })
 
     if (!customer || !customer.password || !customer.password.startsWith('$2b')) {

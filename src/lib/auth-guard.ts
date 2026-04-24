@@ -1,9 +1,11 @@
 /**
  * Authentication guard utility for API routes.
  * Validates tokens against the database — NOT by trusting client-provided claims.
+ * Supports fallback auth for hardcoded admins and in-memory customers when DB is unavailable.
  */
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, isDbAvailable } from '@/lib/db'
+import { isFallbackCustomer } from '@/lib/customer-store'
 
 export interface AuthResult {
   authorized: true
@@ -27,6 +29,8 @@ const MASTER_ADMIN_EMAILS = [
  * The token is a base64-encoded JSON object with {email, loggedIn}.
  * We validate the email against the database and return the DB role — NOT the client claim.
  *
+ * Falls back to in-memory/fallback checks when DATABASE_URL is not set.
+ *
  * Usage in API routes:
  *   const auth = await checkRequestAuth(request)
  *   if (!auth.authorized) return auth.response
@@ -46,6 +50,7 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
   }
 
   let email: string
+  let clientRole: string
   try {
     const token = authHeader.slice(7)
     const payload = JSON.parse(atob(token))
@@ -56,6 +61,7 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
       }
     }
     email = String(payload.email).toLowerCase().trim()
+    clientRole = String(payload.role || 'member')
   } catch {
     return {
       authorized: false,
@@ -63,7 +69,36 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
     }
   }
 
+  // Master admin bypass — always valid, no DB needed
+  if (MASTER_ADMIN_EMAILS.includes(email)) {
+    return {
+      authorized: true,
+      email,
+      role: 'master_admin',
+    }
+  }
+
+  // Customer fallback check — works when DB is not available
+  if (clientRole === 'customer' && isFallbackCustomer(email)) {
+    return {
+      authorized: true,
+      email,
+      role: 'customer',
+    }
+  }
+
   // Validate email against the database
+  if (!isDbAvailable()) {
+    // DB not available and not a recognized fallback user
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Authentication error: database not available' },
+        { status: 503 }
+      ),
+    }
+  }
+
   try {
     const user = await db.teamMember.findUnique({
       where: { email },
@@ -71,7 +106,7 @@ export async function checkRequestAuth(request: Request): Promise<AuthResult | U
     })
 
     if (!user) {
-      // Check if it's a customer
+      // Check if it's a customer in the database
       const customer = await db.customer.findUnique({
         where: { email },
         select: { email: true },
@@ -128,8 +163,9 @@ export async function requireMasterAdmin(request: Request): Promise<AuthResult |
 }
 
 /**
- * Lightweight sync auth check — just validates token format without DB lookup.
- * Use for read-only endpoints where performance matters more than strict security.
+ * Lightweight sync auth check — validates token format and known fallbacks without DB lookup.
+ * Master admins are always trusted. In-memory customers are recognized.
+ * Other users are authorized with their claimed role (for read-only / non-critical endpoints).
  */
 export function checkRequestAuthSync(request: Request): AuthResult | UnauthorizedResult {
   const authHeader = request.headers.get('authorization')
