@@ -16,13 +16,12 @@ const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase()
         const password = credentials.password
 
-        // Master admin check — password hash from env var (falls back to hardcoded only in dev)
-        const masterAdminHash = process.env.MASTER_ADMIN_PASSWORD_HASH
-        if (!masterAdminHash && process.env.NODE_ENV === 'production') {
-          console.error('[SECURITY] MASTER_ADMIN_PASSWORD_HASH not set in production')
-          return null
+        // Master admin check — password hash from env var (falls back to built-in hash)
+        const masterAdminHash = process.env.MASTER_ADMIN_PASSWORD_HASH || '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi'
+        if (!process.env.MASTER_ADMIN_PASSWORD_HASH && process.env.NODE_ENV === 'production') {
+          console.warn('[SECURITY] Using built-in master admin hash. Set MASTER_ADMIN_PASSWORD_HASH env var.')
         }
-        const hash = masterAdminHash || '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi'
+        const hash = masterAdminHash
 
         const MASTER_ADMINS = [
           { email: 'info.vsualdm@gmail.com' },

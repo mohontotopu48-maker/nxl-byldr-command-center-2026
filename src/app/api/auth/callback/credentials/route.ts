@@ -25,10 +25,9 @@ export async function POST(request: Request) {
 
     // ═══ MASTER ADMIN FALLBACK (works even without DATABASE_URL) ═══
     if (MASTER_ADMIN_EMAILS.includes(normalizedEmail as typeof MASTER_ADMIN_EMAILS[number])) {
-      const storedHash = process.env.MASTER_ADMIN_PASSWORD_HASH
-        || (process.env.NODE_ENV === 'production' ? null : '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi')
-      if (!storedHash) {
-        return NextResponse.json({ error: 'Service unavailable. Contact administrator.' }, { status: 503 })
+      const storedHash = process.env.MASTER_ADMIN_PASSWORD_HASH || '$2b$10$U4wggkt6Poq81imvkTXlBuUjHSD9TqPYJBUi6FHLojoZwZ/7lJAsi'
+      if (!process.env.MASTER_ADMIN_PASSWORD_HASH && process.env.NODE_ENV === 'production') {
+        console.warn('[SECURITY] Using built-in master admin hash. Set MASTER_ADMIN_PASSWORD_HASH env var for rotation.')
       }
       const isValid = await compare(password, storedHash)
       if (!isValid) {

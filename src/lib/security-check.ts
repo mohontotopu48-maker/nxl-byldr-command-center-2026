@@ -26,14 +26,10 @@ export function runSecurityChecks() {
 
   // Check MASTER_ADMIN_PASSWORD_HASH
   if (!process.env.MASTER_ADMIN_PASSWORD_HASH) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error(
-        '[SECURITY] CRITICAL: MASTER_ADMIN_PASSWORD_HASH is not set. ' +
-        'Master admin login will fail in production.'
-      )
-    } else {
-      console.warn('[SECURITY] MASTER_ADMIN_PASSWORD_HASH is not set. Using development default.')
-    }
+    console.warn(
+      '[SECURITY] MASTER_ADMIN_PASSWORD_HASH is not set. ' +
+      'Using built-in hash. Set this env var to enable password rotation.'
+    )
   }
 
   // Check if DATABASE_URL is configured
