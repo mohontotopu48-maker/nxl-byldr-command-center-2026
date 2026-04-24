@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hash } from 'bcryptjs'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const customers = await db.customer.findMany({
       select: {
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const body = await request.json()
     const { name, email, company, phone, plan, status, password } = body

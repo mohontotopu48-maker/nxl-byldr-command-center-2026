@@ -10,7 +10,18 @@ export async function GET(
 
     const member = await db.teamMember.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+        status: true,
+        phone: true,
+        location: true,
+        bio: true,
+        createdAt: true,
+        updatedAt: true,
         tasks: {
           orderBy: { createdAt: 'desc' },
           include: {

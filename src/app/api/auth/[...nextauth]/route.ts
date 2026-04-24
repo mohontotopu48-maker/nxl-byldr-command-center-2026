@@ -90,7 +90,11 @@ const authOptions: NextAuthOptions = {
     },
   },
   session: { strategy: 'jwt' },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: (() => {
+    const s = process.env.NEXTAUTH_SECRET
+    if (!s) throw new Error('NEXTAUTH_SECRET environment variable is required')
+    return s
+  })(),
   pages: {
     signIn: '/',
   },

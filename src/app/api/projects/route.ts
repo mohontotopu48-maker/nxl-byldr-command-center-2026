@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
   try {
     const projects = await db.project.findMany({
       include: {
@@ -23,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const body = await request.json()
     const { name, description, status, priority, startDate, endDate } = body

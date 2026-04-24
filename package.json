@@ -14,7 +14,7 @@
     "db:migrate": "npx prisma migrate dev",
     "db:migrate:deploy": "npx prisma migrate deploy",
     "db:seed": "curl -X POST http://localhost:3000/api/seed?force=true",
-    "postinstall": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/placeholder?sslmode=prefer\" npx prisma generate || npx prisma generate",
+    "postinstall": "npx prisma generate 2>/dev/null || true",
     "hf:install": "powershell -ExecutionPolicy Bypass -Command \"irm https://hf.co/cli/install.ps1 | iex\"",
     "hf:sync:up": "hf sync ./data hf://buckets/Tmohonto/commandcenter",
     "hf:sync:down": "hf sync hf://buckets/Tmohonto/commandcenter ./local"

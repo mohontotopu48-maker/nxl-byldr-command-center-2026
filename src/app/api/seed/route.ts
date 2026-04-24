@@ -42,8 +42,9 @@ export async function POST(request: NextRequest) {
       await db.teamMember.deleteMany()
     }
 
-    // Hash master admin password
-    const masterPasswordHash = await hash('VSUAL@NX$260&', 10)
+    // Hash master admin password (from env or default)
+    const masterPassword = process.env.SEED_MASTER_PASSWORD || 'VSUAL@NX$260&'
+    const masterPasswordHash = await hash(masterPassword, 10)
 
     // Create master admin team members first
     await db.teamMember.createMany({
@@ -65,8 +66,9 @@ export async function POST(request: NextRequest) {
       ],
     })
 
-    // Hash default member password
-    const memberPasswordHash = await hash('password123', 10)
+    // Hash default member password (from env or default)
+    const memberPassword = process.env.SEED_MEMBER_PASSWORD || 'password123'
+    const memberPasswordHash = await hash(memberPassword, 10)
 
     // Create team members
     await db.teamMember.createMany({

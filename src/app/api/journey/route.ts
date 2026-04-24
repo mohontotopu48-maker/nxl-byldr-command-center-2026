@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
 // Default 13 setup steps per PDF specification
 const DEFAULT_STEPS = [
@@ -19,7 +20,9 @@ const DEFAULT_STEPS = [
 ]
 
 // GET /api/journey — list all journeys (admin view)
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
   try {
     const journeys = await db.clientJourney.findMany({
       orderBy: { updatedAt: 'desc' },
@@ -38,6 +41,9 @@ export async function GET() {
 
 // POST /api/journey — create a new journey for a customer
 export async function POST(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { customerId } = await request.json()
 

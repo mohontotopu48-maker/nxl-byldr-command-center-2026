@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
 // GET /api/contact — list all contact messages (admin view)
 // Supports ?status=unread|read|replied filter
 export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')

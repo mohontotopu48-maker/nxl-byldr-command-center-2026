@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { checkRequestAuth } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const activities = await db.activity.findMany({
       orderBy: { createdAt: 'desc' },
@@ -19,6 +23,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await checkRequestAuth(request)
+  if (!auth.authorized) return auth.response
+
   try {
     const body = await request.json()
     const { type, message, userId, metadata } = body
