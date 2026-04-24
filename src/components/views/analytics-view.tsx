@@ -99,7 +99,10 @@ export function AnalyticsView() {
 
   useEffect(() => {
     apiFetch('/api/dashboard')
-      .then(r => r.ok ? r.json() : null)
+      .then(r => {
+        if (!r.ok) throw new Error('API error')
+        return r.json()
+      })
       .then(data => {
         if (data) {
           setDashData({
@@ -267,10 +270,9 @@ export function AnalyticsView() {
                   </CardTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">Monthly revenue & user growth</p>
                 </div>
-                <Badge variant="secondary" className="bg-primary/10 text-primary text-[10px]">
-                  <TrendingUp className="mr-1 h-3 w-3" />
-                  +12.5%
-                </Badge>
+                  <Badge variant="secondary" className="bg-amber-400/10 text-amber-400 text-[10px]">
+                    Demo Data
+                  </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
@@ -283,8 +285,8 @@ export function AnalyticsView() {
                         <stop offset="95%" stopColor="#FF0099" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="usersGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FF0099" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#FF0099" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2A2A35" />
@@ -312,7 +314,7 @@ export function AnalyticsView() {
                     <Area
                       type="monotone"
                       dataKey="users"
-                      stroke="#FF0099"
+                      stroke="#8B5CF6"
                       strokeWidth={2}
                       fillOpacity={1}
                       fill="url(#usersGradient)"
@@ -360,7 +362,7 @@ export function AnalyticsView() {
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="tasks" fill="#FF0099" radius={[4, 4, 0, 0]} name="Tasks" />
-                    <Bar dataKey="meetings" fill="#FF0099" radius={[4, 4, 0, 0]} name="Meetings" />
+                    <Bar dataKey="meetings" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Meetings" />
                     <Bar dataKey="reviews" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Reviews" />
                   </BarChart>
                 </ResponsiveContainer>

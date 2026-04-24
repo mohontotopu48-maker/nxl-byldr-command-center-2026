@@ -80,7 +80,7 @@ export async function PUT(
       }
     }
 
-    const validStatuses = ['active', 'inactive', 'lead']
+    const validStatuses = ['active', 'inactive']
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },

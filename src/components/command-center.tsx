@@ -68,6 +68,7 @@ export function CommandCenter({ onLogout }: CommandCenterProps) {
         onViewChange={setActiveView}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isAdmin={isAdmin}
       />
 
       {/* Main Content */}

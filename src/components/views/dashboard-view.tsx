@@ -104,10 +104,10 @@ interface DashboardStats {
 /* ═══════════════════════════════════════════════════════════════ */
 
 const PHASES = [
-  { id: 'handover', label: 'Phase 1', title: 'The Handover', desc: 'Gathering your business info', steps: [1, 2, 3] },
-  { id: 'game_plan', label: 'Phase 2', title: 'The Game Plan', desc: 'Planning your lead strategy', steps: [4, 5, 6] },
-  { id: 'technical', label: 'Phase 3', title: 'Technical Foundation', desc: 'Building your ads & CRM', steps: [7, 8, 9, 10, 11] },
-  { id: 'live', label: 'Phase 4', title: 'Live & Running', desc: 'Getting you live', steps: [12, 13] },
+  { id: 'discovery', label: 'Phase 1', title: 'The Handover', desc: 'Gathering your business info', steps: [1, 2, 3] },
+  { id: 'strategy', label: 'Phase 2', title: 'The Game Plan', desc: 'Planning your lead strategy', steps: [4, 5, 6] },
+  { id: 'delivery', label: 'Phase 3', title: 'Technical Foundation', desc: 'Building your ads & CRM', steps: [7, 8, 9, 10, 11] },
+  { id: 'launch', label: 'Phase 4', title: 'Live & Running', desc: 'Getting you live', steps: [12, 13] },
 ]
 
 const containerVariants = {
@@ -266,7 +266,7 @@ function AdminDashboard({ auth }: { auth: ReturnType<typeof getAuth> | null }) {
   }, [])
 
   // Derived stats
-  const activeJourneys = journeys.filter(j => j.overallStatus === 'in_progress').length
+  const activeJourneys = journeys.filter(j => j.overallStatus === 'active' || j.overallStatus === 'in_progress').length
   const avgCompletion = journeys.length > 0
     ? Math.round(journeys.reduce((sum, j) => sum + getCompletionPercent(j), 0) / journeys.length)
     : 0
@@ -626,7 +626,7 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
         toast.success('AI automation complete')
         onRefresh()
         // Also refresh steps if auto_advance
-        if (action === 'auto_advance' || action === 'generate_alert') {
+        if (action === 'generate_alert') {
           const jRes = await apiFetch(`/api/journey/${journey.id}`)
           if (jRes.ok) {
             const jData = await jRes.json()
@@ -789,11 +789,11 @@ function JourneyDetailDialog({ journey, open, onOpenChange, onRefresh }: {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleAiAction('auto_advance')}
+                onClick={() => handleAiAction('auto_advance_confirm')}
                 disabled={aiLoading !== null}
                 className="border-border text-xs text-muted-foreground hover:text-primary hover:border-primary/30 h-9"
               >
-                {aiLoading === 'auto_advance' ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : <Play className="mr-1.5 h-3 w-3" />}
+                {aiLoading === 'auto_advance_confirm' ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : <Play className="mr-1.5 h-3 w-3" />}
                 Auto Advance
               </Button>
               <Button

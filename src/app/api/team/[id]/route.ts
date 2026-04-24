@@ -106,6 +106,14 @@ export async function PUT(
       )
     }
 
+    const validStatuses = ['active', 'inactive', 'suspended']
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
     const member = await db.teamMember.update({
       where: { id },
       data: {

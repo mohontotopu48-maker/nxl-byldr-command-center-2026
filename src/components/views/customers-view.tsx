@@ -65,7 +65,7 @@ interface Customer {
   id: string
   name: string
   email: string
-  company: string
+  company: string | null
   phone: string
   status: CustomerStatus
   plan: CustomerPlan
@@ -159,7 +159,8 @@ export function CustomersView() {
         resetForm()
         fetchCustomers()
       } else {
-        toast.error('Failed to add customer')
+        const errData = await res.json().catch(() => ({}))
+        toast.error(errData.error || 'Failed to add customer')
       }
     } catch {
       toast.error('Failed to add customer')
@@ -180,7 +181,8 @@ export function CustomersView() {
         toast.success(`${deleteTarget.name} removed`)
         fetchCustomers()
       } else {
-        toast.error('Failed to remove customer')
+        const errData = await res.json().catch(() => ({}))
+        toast.error(errData.error || 'Failed to remove customer')
       }
     } catch {
       toast.error('Failed to remove customer')
@@ -202,7 +204,7 @@ export function CustomersView() {
     return (
       c.name.toLowerCase().includes(q) ||
       c.email.toLowerCase().includes(q) ||
-      c.company.toLowerCase().includes(q)
+      (c.company || '').toLowerCase().includes(q)
     )
   })
 
@@ -491,7 +493,7 @@ export function CustomersView() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-background border-border text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteCustomer} className="bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteCustomer() }} className="bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

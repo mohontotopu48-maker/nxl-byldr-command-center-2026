@@ -469,7 +469,7 @@ export function ProjectsView() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-background border-border text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteProject} className="bg-destructive text-white hover:bg-destructive/90">
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteProject() }} className="bg-destructive text-white hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

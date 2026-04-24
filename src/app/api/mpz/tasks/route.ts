@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const validStatuses = ['pending', 'in_progress', 'completed', 'blocked']
+    const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled']
     if (status !== undefined && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const validPriorities = ['low', 'medium', 'high', 'critical']
+    const validPriorities = ['low', 'medium', 'high', 'urgent']
     if (priority !== undefined && !validPriorities.includes(priority)) {
       return NextResponse.json(
         { error: `Invalid priority. Must be one of: ${validPriorities.join(', ')}` },

@@ -60,7 +60,7 @@ import {
 } from '@/components/ui/table'
 
 type MemberRole = 'admin' | 'manager' | 'member' | 'master_admin'
-type MemberStatus = 'active' | 'inactive'
+type MemberStatus = 'active' | 'inactive' | 'suspended'
 
 interface TeamMember {
   id: string
@@ -90,16 +90,19 @@ const roleStyles: Record<MemberRole, string> = {
 const statusColors: Record<MemberStatus, string> = {
   active: 'bg-primary',
   inactive: 'bg-muted-foreground/40',
+  suspended: 'bg-red-500',
 }
 
 const statusDotTitle: Record<MemberStatus, string> = {
   active: 'Active',
   inactive: 'Inactive',
+  suspended: 'Suspended',
 }
 
 const statusStyles: Record<MemberStatus, string> = {
   active: 'bg-primary/15 text-primary',
   inactive: 'bg-muted text-muted-foreground',
+  suspended: 'bg-red-500/15 text-red-500',
 }
 
 const containerVariants = {
@@ -515,7 +518,7 @@ export function TeamView() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-background border-border text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteMember} className="bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteMember() }} className="bg-destructive text-white hover:bg-destructive/90">Remove</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

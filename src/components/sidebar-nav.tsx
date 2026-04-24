@@ -40,6 +40,7 @@ interface SidebarNavProps {
   collapsed?: boolean
   onToggleCollapse?: () => void
   className?: string
+  isAdmin?: boolean
 }
 
 const navItems: { id: NavView; label: string; icon: React.ElementType; special?: boolean }[] = [
@@ -59,6 +60,7 @@ function SidebarContent({
   onViewChange,
   collapsed,
   onToggleCollapse,
+  isAdmin = false,
 }: SidebarNavProps) {
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -95,6 +97,7 @@ function SidebarContent({
             {navItems.map((item) => {
               const isActive = activeView === item.id
               const Icon = item.icon
+              if (item.special && !isAdmin) return null
 
               if (collapsed) {
                 return (
@@ -206,6 +209,7 @@ export function SidebarNav({
   collapsed = false,
   onToggleCollapse,
   className,
+  isAdmin = false,
 }: SidebarNavProps) {
   return (
     <>
@@ -224,6 +228,7 @@ export function SidebarNav({
           onViewChange={onViewChange}
           collapsed={collapsed}
           onToggleCollapse={onToggleCollapse}
+          isAdmin={isAdmin}
         />
       </motion.aside>
 
@@ -245,6 +250,7 @@ export function SidebarNav({
             activeView={activeView}
             onViewChange={onViewChange}
             collapsed={false}
+            isAdmin={isAdmin}
           />
         </SheetContent>
       </Sheet>
