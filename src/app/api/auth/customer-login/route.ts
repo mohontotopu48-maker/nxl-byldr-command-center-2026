@@ -55,17 +55,12 @@ export async function POST(request: Request) {
       where: { email: normalizedEmail },
     })
 
-    if (!customer || !customer.password || !customer.password.startsWith('$2b')) {
+    if (!customer || !customer.password || (!customer.password.startsWith('$2a$') && !customer.password.startsWith('$2b$'))) {
       return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 })
     }
 
-    // Check password — only bcrypt hashes are accepted
-    if (customer.password && customer.password.length > 0 && (customer.password.startsWith('$2a$') || customer.password.startsWith('$2b$'))) {
-      const isValid = await compare(password, customer.password)
-      if (!isValid) {
-        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
-      }
-    } else {
+    const isValid = await compare(password, customer.password)
+    if (!isValid) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
     }
 

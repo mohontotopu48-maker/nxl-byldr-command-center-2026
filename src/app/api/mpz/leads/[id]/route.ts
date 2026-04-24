@@ -42,6 +42,12 @@ export async function PUT(
     const body = await request.json()
     const { stage, assignedTo, mockupReady, automationStarted, automationDay, notes } = body
 
+    // Verify lead exists
+    const existing = await db.mpzLead.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+    }
+
     // Validate stage if provided
     const VALID_STAGES = ['new_lead', 'mockup_needed', 'mockup_sent', 'engaged', 'video_sent', 'proof_stage', 'hot_lead', 'call_scheduled', 'closed_won', 'closed_lost', 'retention']
     if (stage !== undefined && !VALID_STAGES.includes(stage)) {

@@ -28,7 +28,7 @@ export function MpzAlerts({ onSelectLead }: MpzAlertsProps) {
       apiFetch('/api/mpz/tasks').then(r => r.ok ? r.json() : []),
     ])
       .then(([l, t]) => { setLeads(l); setTasks(t) })
-      .catch(() => {})
+      .catch(() => { toast.error('Failed to load alerts data') })
       .finally(() => setLoading(false))
   }, [])
 

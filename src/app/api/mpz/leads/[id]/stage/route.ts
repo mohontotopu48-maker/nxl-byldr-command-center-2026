@@ -30,18 +30,22 @@ export async function PUT(
 
     const previousStage = currentLead.stage
 
-    const lead = await db.mpzLead.update({
-      where: { id },
-      data: { stage },
-      include: { tasks: true, activities: true },
-    })
+    const lead = await db.$transaction(async (tx) => {
+      const updated = await tx.mpzLead.update({
+        where: { id },
+        data: { stage },
+        include: { tasks: true, activities: true },
+      })
 
-    await db.mpzActivity.create({
-      data: {
-        type: 'stage_change',
-        message: `${lead.name} moved from "${previousStage}" to "${stage}"`,
-        leadId: id,
-      },
+      await tx.mpzActivity.create({
+        data: {
+          type: 'stage_change',
+          message: `${updated.name} moved from "${previousStage}" to "${stage}"`,
+          leadId: id,
+        },
+      })
+
+      return updated
     })
 
     return NextResponse.json(lead)

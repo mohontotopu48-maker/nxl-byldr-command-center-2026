@@ -21,21 +21,25 @@ export async function PUT(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    const task = await db.mpzTask.update({
-      where: { id },
-      data: { status: 'completed' },
-      include: { lead: true },
-    })
+    const task = await db.$transaction(async (tx) => {
+      const updated = await tx.mpzTask.update({
+        where: { id },
+        data: { status: 'completed' },
+        include: { lead: true },
+      })
 
-    const leadContext = currentTask.lead
-      ? ` for ${currentTask.lead.name}`
-      : ''
-    await db.mpzActivity.create({
-      data: {
-        type: 'task_completed',
-        message: `Task "${currentTask.title}" completed by ${currentTask.assignedTo}${leadContext}`,
-        leadId: currentTask.leadId,
-      },
+      const leadContext = currentTask.lead
+        ? ` for ${currentTask.lead.name}`
+        : ''
+      await tx.mpzActivity.create({
+        data: {
+          type: 'task_completed',
+          message: `Task "${currentTask.title}" completed by ${currentTask.assignedTo}${leadContext}`,
+          leadId: currentTask.leadId,
+        },
+      })
+
+      return updated
     })
 
     return NextResponse.json(task)

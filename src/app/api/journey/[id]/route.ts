@@ -46,6 +46,12 @@ export async function PATCH(
     const body = await request.json()
     const { currentPhase, overallStatus, notes } = body
 
+    // Verify journey exists before update
+    const existing = await db.clientJourney.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Journey not found' }, { status: 404 })
+    }
+
     const VALID_PHASES = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
     const VALID_STATUSES = ['active', 'completed', 'paused', 'on_hold']
 

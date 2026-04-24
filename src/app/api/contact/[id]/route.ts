@@ -69,6 +69,9 @@ export async function PATCH(
     }
 
     if (reply !== undefined) {
+      if (typeof reply !== 'string' || reply.length > 10000) {
+        return NextResponse.json({ error: 'Reply must be a string under 10,000 characters' }, { status: 400 })
+      }
       updateData.reply = reply
       // If a reply is being written, auto-set repliedAt and status
       updateData.repliedAt = new Date()

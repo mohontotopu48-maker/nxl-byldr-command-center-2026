@@ -40,26 +40,35 @@ export async function POST(
     const { id: journeyId } = await params
     const { active, message, priority, triggeredBy } = await request.json()
 
-    // Delete old alerts for this journey
-    await db.clientAlert.deleteMany({ where: { journeyId } })
+    // Validate inputs
+    if (active !== undefined && typeof active !== 'boolean') {
+      return NextResponse.json({ error: 'active must be a boolean' }, { status: 400 })
+    }
+    if (message !== undefined && (typeof message !== 'string' || message.length > 500)) {
+      return NextResponse.json({ error: 'message must be a string under 500 characters' }, { status: 400 })
+    }
+    const validPriorities = ['low', 'normal', 'medium', 'high', 'urgent']
+    const validPriority = priority && validPriorities.includes(priority) ? priority : 'normal'
 
-    // Create new alert
-    const alert = await db.clientAlert.create({
-      data: {
-        journeyId,
-        active: active ?? false,
-        message: message || 'All Systems Go — Project on Schedule.',
-        priority: priority || 'normal',
-      },
-    })
-
-    // Log the action
-    await db.automationLog.create({
-      data: {
-        journeyId,
-        action: active ? `Alert activated: "${message}"` : 'Alert cleared — All Systems Go',
-        triggeredBy: triggeredBy || 'manual',
-      },
+    // Atomic: delete old + create new + log
+    const alert = await db.$transaction(async (tx) => {
+      await tx.clientAlert.deleteMany({ where: { journeyId } })
+      const created = await tx.clientAlert.create({
+        data: {
+          journeyId,
+          active: active ?? false,
+          message: message || 'All Systems Go — Project on Schedule.',
+          priority: validPriority,
+        },
+      })
+      await tx.automationLog.create({
+        data: {
+          journeyId,
+          action: active ? `Alert activated: "${message}"` : 'Alert cleared — All Systems Go',
+          triggeredBy: triggeredBy || 'manual',
+        },
+      })
+      return created
     })
 
     return NextResponse.json(alert)

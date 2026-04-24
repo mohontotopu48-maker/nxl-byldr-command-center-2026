@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { checkRequestAuth } from '@/lib/auth-guard'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import ZAI from 'z-ai-web-dev-sdk'
 
 // POST /api/journey/[id]/automate — AI-powered automation for a client journey
@@ -10,6 +11,16 @@ export async function POST(
 ) {
   const auth = await checkRequestAuth(request)
   if (!auth.authorized) return auth.response
+
+  // Rate limit — this endpoint calls paid AI APIs
+  const ip = getClientIp(request)
+  const rl = rateLimit(`automate:${ip}`, { limit: 10, windowMs: 60000 })
+  if (!rl.success) {
+    return NextResponse.json({ error: 'Too many automation requests. Please wait a moment.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }
+    })
+  }
 
   try {
     const { id: journeyId } = await params
@@ -205,50 +216,50 @@ Rules:
 
         const validStatuses = ['completed', 'in_progress', 'pending']
         const appliedUpdates: Array<{ stepId: string; status: string }> = []
-
-        for (const item of updates) {
-          if (typeof item !== 'object' || item === null) continue
-          if (typeof item.stepNumber !== 'number' || !validStatuses.includes(item.status)) continue
-          const step = journey.setupSteps.find(s => s.stepNumber === item.stepNumber)
-          if (!step) continue
-          if (item.status === 'completed' && item.stepNumber > 1) {
-            const prev = journey.setupSteps.find(s => s.stepNumber === item.stepNumber - 1)
-            if (prev && prev.status !== 'completed') continue
-          }
-
-          await db.clientSetupStep.update({
-            where: { id: step.id },
-            data: {
-              status: item.status,
-              completedAt: item.status === 'completed' ? new Date() : null,
-            },
-          })
-          appliedUpdates.push({ stepId: step.id, status: item.status })
-        }
-
-        // Recalculate journey
-        const allSteps = await db.clientSetupStep.findMany({ where: { journeyId }, orderBy: { stepNumber: 'asc' } })
-        const newCompleted = allSteps.filter(s => s.status === 'completed').length
-        const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+        let newCompleted = 0
         let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
-        for (const phase of phases) {
-          if (allSteps.filter(s => s.phase === phase).some(s => s.status !== 'completed')) {
-            currentPhase = phase
-            break
-          }
-        }
 
-        await db.clientJourney.update({
-          where: { id: journeyId },
-          data: { completedSteps: newCompleted, currentPhase, overallStatus: (newCompleted === totalSteps ? 'completed' : 'active') as 'active' | 'completed' | 'paused' | 'on_hold' },
+        await db.$transaction(async (tx) => {
+          for (const item of updates) {
+            if (typeof item !== 'object' || item === null) continue
+            if (typeof item.stepNumber !== 'number' || !validStatuses.includes(item.status)) continue
+            const step = journey.setupSteps.find(s => s.stepNumber === item.stepNumber)
+            if (!step) continue
+            if (item.status === 'completed' && item.stepNumber > 1) {
+              const prev = journey.setupSteps.find(s => s.stepNumber === item.stepNumber - 1)
+              if (prev && prev.status !== 'completed') continue
+            }
+
+            await tx.clientSetupStep.update({
+              where: { id: step.id },
+              data: { status: item.status, completedAt: item.status === 'completed' ? new Date() : null },
+            })
+            appliedUpdates.push({ stepId: step.id, status: item.status })
+          }
+
+          const allSteps = await tx.clientSetupStep.findMany({ where: { journeyId }, orderBy: { stepNumber: 'asc' } })
+          newCompleted = allSteps.filter(s => s.status === 'completed').length
+          const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+          currentPhase = 'discovery'
+          for (const phase of phases) {
+            if (allSteps.filter(s => s.phase === phase).some(s => s.status !== 'completed')) {
+              currentPhase = phase
+              break
+            }
+          }
+
+          await tx.clientJourney.update({
+            where: { id: journeyId },
+            data: { completedSteps: newCompleted, currentPhase, overallStatus: (newCompleted === totalSteps ? 'completed' : 'active') as 'active' | 'completed' | 'paused' | 'on_hold' },
+          })
+
+          await tx.automationLog.create({
+            data: { journeyId, action: `Admin confirmed advance: ${JSON.stringify(appliedUpdates)}`, triggeredBy: 'manual_confirm' },
+          })
         })
 
         aiResponse = `Confirmed ${appliedUpdates.length} step advance(s). ${appliedUpdates.map(u => `Step ${u.stepId.split('_')[0]} → ${u.status}`).join(', ')}`
         updatedData = { updates: appliedUpdates, completedSteps: newCompleted, currentPhase }
-
-        await db.automationLog.create({
-          data: { journeyId, action: `Admin confirmed advance: ${JSON.stringify(appliedUpdates)}`, triggeredBy: 'manual_confirm' },
-        })
         break
       }
 

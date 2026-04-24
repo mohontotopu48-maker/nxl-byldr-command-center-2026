@@ -26,34 +26,33 @@ export async function PUT(
       )
     }
 
-    const updatedLead = await db.mpzLead.update({
-      where: { id },
-      data: {
-        mockupReady: true,
-        stage: 'mockup_sent',
-        automationStarted: true,
-        automationDay: 1,
-      },
-      include: { tasks: true, activities: true },
-    })
+    let updatedLead
 
-    await db.mpzTask.create({
-      data: {
-        title: 'Start 14-day funnel',
-        description: `Begin 14-day automation funnel for ${lead.name} (${lead.businessName})`,
-        status: 'pending',
-        priority: 'high',
-        assignedTo: lead.assignedTo || 'Geo',
-        leadId: id,
-      },
-    })
+    await db.$transaction(async (tx) => {
+      updatedLead = await tx.mpzLead.update({
+        where: { id },
+        data: { mockupReady: true, stage: 'mockup_sent', automationStarted: true, automationDay: 1 },
+        include: { tasks: true, activities: true },
+      })
 
-    await db.mpzActivity.create({
-      data: {
-        type: 'mockup_ready',
-        message: `Mockup marked as ready for ${lead.name}. Automation started, 14-day funnel task assigned.`,
-        leadId: id,
-      },
+      await tx.mpzTask.create({
+        data: {
+          title: 'Start 14-day funnel',
+          description: `Begin 14-day automation funnel for ${lead.name} (${lead.businessName})`,
+          status: 'pending',
+          priority: 'high',
+          assignedTo: lead.assignedTo || 'Geo',
+          leadId: id,
+        },
+      })
+
+      await tx.mpzActivity.create({
+        data: {
+          type: 'mockup_ready',
+          message: `Mockup marked as ready for ${lead.name}. Automation started, 14-day funnel task assigned.`,
+          leadId: id,
+        },
+      })
     })
 
     return NextResponse.json(updatedLead)

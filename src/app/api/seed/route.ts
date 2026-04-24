@@ -404,9 +404,8 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Error seeding database:', error)
-    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to seed database', details: message },
+      { error: 'Failed to seed database' },
       { status: 500 }
     )
   }

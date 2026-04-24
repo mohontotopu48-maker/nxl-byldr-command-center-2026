@@ -30,60 +30,50 @@ export async function PUT(
       return NextResponse.json({ error: 'Step not found or does not belong to this journey' }, { status: 404 })
     }
 
-    // Update the step
-    const step = await db.clientSetupStep.update({
-      where: { id: stepId },
-      data: {
-        status,
-        completedAt: status === 'completed' ? new Date() : null,
-      },
-    })
+    // Update the step and recalculate journey — atomic transaction
+    const result = await db.$transaction(async (tx) => {
+      const step = await tx.clientSetupStep.update({
+        where: { id: stepId },
+        data: {
+          status,
+          completedAt: status === 'completed' ? new Date() : null,
+        },
+      })
 
-    // Recalculate completed steps and determine current phase
-    const allSteps = await db.clientSetupStep.findMany({
-      where: { journeyId },
-      orderBy: { stepNumber: 'asc' },
-    })
+      const allSteps = await tx.clientSetupStep.findMany({
+        where: { journeyId },
+        orderBy: { stepNumber: 'asc' },
+      })
 
-    const completedCount = allSteps.filter((s) => s.status === 'completed').length
-    const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+      const completedCount = allSteps.filter((s) => s.status === 'completed').length
+      const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
 
-    // Determine current phase based on first non-completed step
-    let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
-    for (const phase of phases) {
-      const phaseSteps = allSteps.filter((s) => s.phase === phase)
-      const phasePending = phaseSteps.some((s) => s.status !== 'completed')
-      if (phasePending) {
-        currentPhase = phase
-        break
+      let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
+      for (const phase of phases) {
+        const phaseSteps = allSteps.filter((s) => s.phase === phase)
+        if (phaseSteps.some((s) => s.status !== 'completed')) {
+          currentPhase = phase
+          break
+        }
       }
-    }
 
-    // Determine overall status
-    const allCompleted = completedCount === allSteps.length
-    const anyInProgress = allSteps.some((s) => s.status === 'in_progress')
-    const overallStatus: 'active' | 'completed' | 'paused' | 'on_hold' = allCompleted ? 'completed' : anyInProgress ? 'active' : 'active'
+      const allCompleted = completedCount === allSteps.length
+      const anyInProgress = allSteps.some((s) => s.status === 'in_progress')
+      const overallStatus: 'active' | 'completed' | 'paused' | 'on_hold' = allCompleted ? 'completed' : anyInProgress ? 'active' : 'active'
 
-    // Update journey
-    await db.clientJourney.update({
-      where: { id: journeyId },
-      data: {
-        completedSteps: completedCount,
-        currentPhase,
-        overallStatus,
-      },
+      await tx.clientJourney.update({
+        where: { id: journeyId },
+        data: { completedSteps: completedCount, currentPhase, overallStatus },
+      })
+
+      await tx.automationLog.create({
+        data: { journeyId, action: `Step "${step.title}" updated to ${status}`, triggeredBy: 'manual' },
+      })
+
+      return { step, completedSteps: completedCount, totalSteps: allSteps.length, currentPhase, overallStatus }
     })
 
-    // Log automation
-    await db.automationLog.create({
-      data: {
-        journeyId,
-        action: `Step "${step.title}" updated to ${status}`,
-        triggeredBy: 'manual',
-      },
-    })
-
-    return NextResponse.json({ step, completedSteps: completedCount, totalSteps: allSteps.length, currentPhase, overallStatus })
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Step update error:', error)
     return NextResponse.json({ error: 'Failed to update step' }, { status: 500 })
@@ -112,52 +102,40 @@ export async function POST(
 
     const validStatuses = ['pending', 'in_progress', 'completed']
     const results: ClientSetupStep[] = []
-    for (const { stepId, status } of updates) {
-      if (!validStatuses.includes(status)) continue
-      const existingStep = await db.clientSetupStep.findUnique({ where: { id: stepId } })
-      if (!existingStep || existingStep.journeyId !== journeyId) continue
-      const step = await db.clientSetupStep.update({
-        where: { id: stepId },
-        data: {
-          status,
-          completedAt: status === 'completed' ? new Date() : null,
-        },
-      })
-      results.push(step)
-    }
-
-    // Recalculate
-    const allSteps = await db.clientSetupStep.findMany({
-      where: { journeyId },
-      orderBy: { stepNumber: 'asc' },
-    })
-    const completedCount = allSteps.filter((s) => s.status === 'completed').length
-    const allCompleted = completedCount === allSteps.length
-    const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+    let completedCount = 0
     let currentPhase: 'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth' = 'discovery'
-    for (const phase of phases) {
-      const phaseSteps = allSteps.filter((s) => s.phase === phase)
-      if (phaseSteps.some((s) => s.status !== 'completed')) {
-        currentPhase = phase
-        break
+
+    await db.$transaction(async (tx) => {
+      for (const { stepId, status } of updates) {
+        if (!validStatuses.includes(status)) continue
+        const existingStep = await tx.clientSetupStep.findUnique({ where: { id: stepId } })
+        if (!existingStep || existingStep.journeyId !== journeyId) continue
+        const step = await tx.clientSetupStep.update({
+          where: { id: stepId },
+          data: { status, completedAt: status === 'completed' ? new Date() : null },
+        })
+        results.push(step)
       }
-    }
 
-    await db.clientJourney.update({
-      where: { id: journeyId },
-      data: {
-        completedSteps: completedCount,
-        currentPhase,
-        overallStatus: (allCompleted ? 'completed' : 'active') as 'active' | 'completed' | 'paused' | 'on_hold',
-      },
-    })
+      const allSteps = await tx.clientSetupStep.findMany({ where: { journeyId }, orderBy: { stepNumber: 'asc' } })
+      completedCount = allSteps.filter((s) => s.status === 'completed').length
+      const allCompleted = completedCount === allSteps.length
+      const phases: Array<'discovery' | 'strategy' | 'delivery' | 'launch' | 'growth'> = ['discovery', 'strategy', 'delivery', 'launch', 'growth']
+      for (const phase of phases) {
+        if (allSteps.filter((s) => s.phase === phase).some((s) => s.status !== 'completed')) {
+          currentPhase = phase
+          break
+        }
+      }
 
-    await db.automationLog.create({
-      data: {
-        journeyId,
-        action: `Bulk update: ${updates.length} step(s) updated via ${triggeredBy || 'manual'}`,
-        triggeredBy: triggeredBy || 'manual',
-      },
+      await tx.clientJourney.update({
+        where: { id: journeyId },
+        data: { completedSteps: completedCount, currentPhase, overallStatus: (allCompleted ? 'completed' : 'active') as 'active' | 'completed' | 'paused' | 'on_hold' },
+      })
+
+      await tx.automationLog.create({
+        data: { journeyId, action: `Bulk update: ${updates.length} step(s) updated via ${triggeredBy || 'manual'}`, triggeredBy: triggeredBy || 'manual' },
+      })
     })
 
     return NextResponse.json({ results, completedSteps: completedCount, currentPhase })
